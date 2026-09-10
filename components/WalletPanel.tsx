@@ -53,8 +53,9 @@ export default function WalletPanel() {
               </span>
             </div>
             <div className="mt-2 text-[9px] text-ink-faint">
-              Every order this wallet signs is public. Verify on Blockscout —
-              do not take the raster&apos;s word for it.
+              Every order this wallet signs is public. Creator rewards flow in
+              with volume; position sizes stay capped regardless. Verify on
+              Blockscout — do not take the raster&apos;s word for it.
             </div>
           </>
         ) : (

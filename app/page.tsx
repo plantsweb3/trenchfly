@@ -1,5 +1,7 @@
 import Hero from "@/components/Hero";
 import Terminal from "@/components/Terminal";
+import Reveal from "@/components/Reveal";
+import { FLY_WALLET, ROBINHOOD_CHAIN } from "@/lib/chain";
 
 const TAPE = [
   "CASHCAT/ETH $0.2540",
@@ -106,24 +108,26 @@ export default function Home() {
             Robinhood order ticket, and every stage is auditable.
           </p>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((s) => (
-              <div key={s.n} className="panel corner p-4">
-                <div
-                  className="text-3xl text-lime-dim"
-                  style={{ fontFamily: "var(--font-pixel)" }}
-                >
-                  {s.n}
+            {STEPS.map((s, i) => (
+              <Reveal key={s.n} delay={i * 90}>
+                <div className="panel corner card-hover h-full p-4">
+                  <div
+                    className="text-3xl text-lime-dim"
+                    style={{ fontFamily: "var(--font-pixel)" }}
+                  >
+                    {s.n}
+                  </div>
+                  <div className="mt-2 text-[11px] font-bold tracking-[0.2em] text-ink">
+                    {s.title}
+                  </div>
+                  <p
+                    className="mt-3 text-xs leading-relaxed text-ink-dim"
+                    style={{ fontFamily: "var(--font-plex-sans)" }}
+                  >
+                    {s.body}
+                  </p>
                 </div>
-                <div className="mt-2 text-[11px] font-bold tracking-[0.2em] text-ink">
-                  {s.title}
-                </div>
-                <p
-                  className="mt-3 text-xs leading-relaxed text-ink-dim"
-                  style={{ fontFamily: "var(--font-plex-sans)" }}
-                >
-                  {s.body}
-                </p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -148,26 +152,28 @@ export default function Home() {
             shown.
           </p>
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            {VENUES.map((v) => (
-              <div key={v.name} className="panel corner p-4">
-                <div className="flex items-baseline justify-between">
-                  <span
-                    className="text-lg text-green"
-                    style={{ fontFamily: "var(--font-pixel)" }}
+            {VENUES.map((v, i) => (
+              <Reveal key={v.name} delay={i * 90}>
+                <div className="panel corner card-hover h-full p-4">
+                  <div className="flex items-baseline justify-between">
+                    <span
+                      className="text-lg text-green"
+                      style={{ fontFamily: "var(--font-pixel)" }}
+                    >
+                      {v.name}
+                    </span>
+                    <span className="text-[9px] tracking-[0.2em] text-ink-faint">
+                      {v.tag.toUpperCase()}
+                    </span>
+                  </div>
+                  <p
+                    className="mt-3 text-xs leading-relaxed text-ink-dim"
+                    style={{ fontFamily: "var(--font-plex-sans)" }}
                   >
-                    {v.name}
-                  </span>
-                  <span className="text-[9px] tracking-[0.2em] text-ink-faint">
-                    {v.tag.toUpperCase()}
-                  </span>
+                    {v.body}
+                  </p>
                 </div>
-                <p
-                  className="mt-3 text-xs leading-relaxed text-ink-dim"
-                  style={{ fontFamily: "var(--font-plex-sans)" }}
-                >
-                  {v.body}
-                </p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -209,6 +215,102 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* verify */}
+      <section id="verify" className="border-t border-line">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <Reveal>
+            <h2
+              className="text-2xl text-ink sm:text-3xl"
+              style={{ fontFamily: "var(--font-pixel)" }}
+            >
+              DON&apos;T TRUST THE <span className="text-lime">FLY</span>
+            </h2>
+            <p
+              className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-dim"
+              style={{ fontFamily: "var(--font-plex-sans)" }}
+            >
+              Verify it. Every claim on this page maps to something you can
+              check yourself. Status is updated as each layer ships — nothing
+              here is marked done before it is.
+            </p>
+          </Reveal>
+          <div className="mt-8 divide-y divide-line border border-line">
+            {[
+              {
+                k: "FLY WALLET",
+                status: "LIVE",
+                color: "var(--green)",
+                body: "One public EVM wallet on chain 4663. Every order it ever signs is permanently visible.",
+                href: FLY_WALLET
+                  ? `${ROBINHOOD_CHAIN.explorer}/address/${FLY_WALLET}`
+                  : ROBINHOOD_CHAIN.explorer,
+                link: FLY_WALLET
+                  ? `${FLY_WALLET.slice(0, 6)}…${FLY_WALLET.slice(-4)} on Blockscout ↗`
+                  : "Blockscout ↗",
+              },
+              {
+                k: "OPEN SOURCE",
+                status: "LIVE",
+                color: "var(--green)",
+                body: "The site, the execution worker, the guard, the decision layer — all public. Read what actually runs.",
+                href: "https://github.com/plantsweb3/trenchfly",
+                link: "github.com/plantsweb3/trenchfly ↗",
+              },
+              {
+                k: "ONCHAIN EXECUTION",
+                status: "PAPER",
+                color: "var(--amber)",
+                body: "The worker quotes real Uniswap v3 pools and runs the full decision loop in paper mode. It flips live after the paper session passes; from then on the trade log above is transactions, not simulation.",
+                href: "https://github.com/plantsweb3/trenchfly/tree/main/worker",
+                link: "worker source ↗",
+              },
+              {
+                k: "CONNECTOME KERNEL",
+                status: "IN BUILD",
+                color: "var(--red)",
+                body: "The full 166,700-neuron spiking simulation (MaleCNS v1.0, checksummed) that will replace the current decoder layer. Until it ships, decisions come from the decoder — the repo says exactly what runs, at all times.",
+                href: "https://github.com/plantsweb3/trenchfly",
+                link: "build progress ↗",
+              },
+            ].map((r) => (
+              <div
+                key={r.k}
+                className="grid gap-2 px-4 py-4 sm:grid-cols-[170px_70px_1fr_auto] sm:items-baseline sm:gap-6"
+              >
+                <span className="text-[10px] font-bold tracking-[0.25em] text-ink">
+                  {r.k}
+                </span>
+                <span
+                  className="text-[10px] font-bold tracking-[0.2em]"
+                  style={{ color: r.color }}
+                >
+                  {r.status}
+                </span>
+                <span
+                  className="text-sm text-ink-dim"
+                  style={{ fontFamily: "var(--font-plex-sans)" }}
+                >
+                  {r.body}
+                </span>
+                <a
+                  href={r.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-lime underline decoration-lime/40 underline-offset-2 hover:decoration-lime"
+                >
+                  {r.link}
+                </a>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-[10px] leading-relaxed text-ink-faint">
+            The terminal above is a labeled paper simulation until execution
+            goes live. When it flips, this page will say so. Fabricated
+            receipts are for other coins.
+          </p>
         </div>
       </section>
 

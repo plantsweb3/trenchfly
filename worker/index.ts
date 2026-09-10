@@ -39,29 +39,28 @@ const watchlist: WatchToken[] = JSON.parse(
 
 let dailyOrders = 0;
 let dayStamp = new Date().toISOString().slice(0, 10);
-let startEquityEth: number | null = null;
 let paperEth = GUARD.capitalEth;
 const paperHoldings = new Map<string, number>();
 
-async function equityEth(address: Address | null): Promise<number> {
-  if (!LIVE || !address) {
-    let eq = paperEth;
-    for (const t of watchlist) {
-      const qty = paperHoldings.get(t.symbol) ?? 0;
-      const px = t.history[t.history.length - 1];
-      if (qty && px) eq += qty * px;
-    }
-    return eq;
-  }
-  const wei = await publicClient.getBalance({ address });
-  let eq = Number(formatEther(wei));
+// Creator rewards / deposits flow into this wallet, so drawdown is measured
+// on TRADING P&L only (sell proceeds + open position value − buy costs) —
+// never on the raw balance, which is expected to grow with coin volume.
+let buyTotalEth = 0;
+let sellTotalEth = 0;
+
+async function positionsEth(address: Address | null): Promise<number> {
+  let v = 0;
   for (const t of watchlist) {
-    if (!t.address || !t.decimals) continue;
-    const bal = await tokenBalance(t.address as Address, address);
     const px = t.history[t.history.length - 1];
-    if (bal > 0n && px) eq += Number(bal) / 10 ** t.decimals * px;
+    if (!px) continue;
+    if (!LIVE || !address) {
+      v += (paperHoldings.get(t.symbol) ?? 0) * px;
+    } else if (t.address && t.decimals) {
+      const bal = await tokenBalance(t.address as Address, address);
+      if (bal > 0n) v += (Number(bal) / 10 ** t.decimals) * px;
+    }
   }
-  return eq;
+  return v;
 }
 
 async function preflight() {
@@ -125,14 +124,24 @@ async function observe(t: WatchToken): Promise<void> {
     dailyOrders = 0;
   }
   const wallet = walletFromEnv();
-  const eq = await equityEth(wallet?.account.address ?? null);
-  if (startEquityEth === null) startEquityEth = eq;
+  const tradingPnl =
+    sellTotalEth +
+    (await positionsEth(wallet?.account.address ?? null)) -
+    buyTotalEth;
+  const cashEth =
+    LIVE && wallet
+      ? Number(
+          formatEther(
+            await publicClient.getBalance({ address: wallet.account.address }),
+          ),
+        )
+      : paperEth;
 
   let rejected: string | null = null;
   if (dailyOrders >= GUARD.dailyOrders) rejected = "timing — daily cap";
-  else if (startEquityEth - eq >= GUARD.drawdownStopEth)
-    rejected = "drawdown stop — no new orders";
-  else if (d.proposal === "BUY" && (LIVE ? eq : paperEth) < GUARD.orderEth * 1.2)
+  else if (tradingPnl <= -GUARD.drawdownStopEth)
+    rejected = "drawdown stop — trading P&L, deposits excluded";
+  else if (d.proposal === "BUY" && cashEth < GUARD.orderEth * 1.2)
     rejected = "budget — cash below order size";
   else if (d.proposal === "SELL") {
     const qty = LIVE

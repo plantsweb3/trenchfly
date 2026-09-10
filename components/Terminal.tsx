@@ -466,6 +466,21 @@ function Portfolio({ sim }: { sim: SimState }) {
             {pnl >= 0 ? "▲" : "▼"} {fmtUsd(Math.abs(pnl))} all time
           </div>
           <svg viewBox="0 0 100 36" className="mt-2 w-full">
+            <defs>
+              <linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor={pnl >= 0 ? "#00c805" : "#ff3b5c"}
+                  stopOpacity="0.35"
+                />
+                <stop
+                  offset="100%"
+                  stopColor={pnl >= 0 ? "#00c805" : "#ff3b5c"}
+                  stopOpacity="0"
+                />
+              </linearGradient>
+            </defs>
+            <polygon points={`0,36 ${pts} 100,36`} fill="url(#eqFill)" />
             <polyline
               points={pts}
               fill="none"
@@ -567,7 +582,10 @@ function TradeRow({ tr }: { tr: Trade }) {
       ? "var(--green)"
       : "var(--red)";
   return (
-    <div className="px-3 py-2 text-[11px]">
+    <div
+      className="trade-row px-3 py-2 text-[11px]"
+      style={{ borderLeftColor: color }}
+    >
       <div className="flex items-center gap-2">
         <span
           className="border px-1.5 py-0.5 text-[9px] font-bold tracking-widest"
