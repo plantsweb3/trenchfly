@@ -1,0 +1,23 @@
+{
+  "bg": 5.5009765625,
+  "noise_sigma": 15.0,
+  "resting_hz_mean": 19.435422915416915,
+  "transition_probe": {
+    "falling": {
+      "dnp20_L_hz": 290.0,
+      "dnp20_R_hz": 254.0,
+      "dnpe017_spikes": 205,
+      "kc_spikes": 585351,
+      "total_spikes": 1915585,
+      "wall_s": 12.2
+    },
+    "rising": {
+      "dnp20_L_hz": 284.0,
+      "dnp20_R_hz": 248.0,
+      "dnpe017_spikes": 194,
+      "kc_spikes": 585276,
+      "total_spikes": 1917768,
+      "wall_s": 12.4
+    }
+  }
+}

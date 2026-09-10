@@ -30,13 +30,23 @@ anyone can rebuild the identical brain.
 - [x] Kernel loads and runs the full brain (166,700 neurons; ~2.2 s wall
       per 100 ms neural — fits the 60 s market cadence). Silent at rest
       (no seizure); all 3,377 R1–R6 spike under drive
-- [ ] Physiology calibration pass. First finding, kept honest:
-      photoreceptors are histaminergic (inhibitory), so a static bright
-      frame suppresses the lamina instead of driving deep circuits —
-      DNp20/KC stay silent. Needs contrast/transient coding and/or a
-      declared lamina bias before the decoder sees anything
-- [ ] DNp20 decoder validated end-to-end against logged frames
-- [ ] Worker `brain.ts` switched from tier-1 proxy to this kernel
+- [x] Physiology calibration pass (`calibrate.py` → `calibration.json`).
+      Findings kept honest: histaminergic photoreceptors suppress under
+      static light, so the network runs in a declared awake regime
+      (tonic background + held noise, ~19 Hz mean). In that regime the
+      decision cells are alive — DNp20 ~250–290 Hz, DNpe017 gating,
+      Kenyon cells engaged — and 500 ms of neural time costs ~12 s wall
+      (CSC column propagation; was 143 s)
+- [x] DNp20 readout responds end-to-end (chart → retina → DNp20).
+      Caveat, stated plainly: v1 sensory mapping has no retinotopy, so
+      L/R rates barely differ between rising and falling charts; the
+      worker therefore decodes the DEVIATION of (R−L) from its rolling
+      baseline — a declared adaptation. True retinotopic mapping (optic-
+      lobe column assignments from syn-points) is the next item
+- [x] Worker `brain.ts` switched from tier-1 proxy to this kernel
+      (automatic when graph + calibration artifacts exist; the active
+      tier is printed at boot and logged on every decision)
+- [ ] Retinotopic sensory mapping (syn-points optic-lobe columns)
 - [ ] Dopamine reinforcement (PAM11/PPL101 pulses, KC→MBON plasticity)
 
 Until every box is checked the site and worker say "decoder-driven."

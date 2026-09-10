@@ -1,0 +1,15 @@
+probe bg=7.500 -> 24.09 Hz mean
+probe bg=6.500 -> 21.45 Hz mean
+probe bg=6.000 -> 20.02 Hz mean
+probe bg=5.750 -> 20.30 Hz mean
+probe bg=5.625 -> 19.52 Hz mean
+probe bg=5.562 -> 19.08 Hz mean
+probe bg=5.531 -> 19.53 Hz mean
+probe bg=5.516 -> 18.82 Hz mean
+probe bg=5.508 -> 19.37 Hz mean
+probe bg=5.504 -> 19.63 Hz mean
+probe bg=5.502 -> 19.77 Hz mean
+calibrated bg=5.501 (resting 19.44 Hz mean)
+falling: {'dnp20_L_hz': 290.0, 'dnp20_R_hz': 254.0, 'dnpe017_spikes': 205, 'kc_spikes': 585351, 'total_spikes': 1915585, 'wall_s': 12.2}
+rising: {'dnp20_L_hz': 284.0, 'dnp20_R_hz': 248.0, 'dnpe017_spikes': 194, 'kc_spikes': 585276, 'total_spikes': 1917768, 'wall_s': 12.4}
+wrote /Users/ulyssesmunoz/trenchfly/brain/calibration.json

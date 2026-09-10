@@ -20,6 +20,9 @@ export const robinhoodChain = defineChain({
 export const GUARD = {
   capitalEth: 0.025, // reference trading capital (rewards can exceed this)
   orderEth: 0.0025, // max size per swap, gas + fees included — the leash
+  maxInventoryEth: 0.0125, // total open-position cap: creator rewards can
+  // pile up in the wallet, but the fly can never deploy more than this
+  // into tokens at once (~5 positions worth)
   drawdownStopEth: 0.005, // stop NEW orders; does not liquidate holdings
   slippageBps: 50, // 0.50%
   minIntervalMs: 60_000,

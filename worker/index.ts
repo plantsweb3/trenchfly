@@ -121,10 +121,10 @@ async function observe(t: WatchToken): Promise<void> {
 
   // ---- guard ----
   const wallet = walletFromEnv();
-  const tradingPnl =
-    sellTotalEth +
-    (await positionsEth(wallet?.account.address ?? null)) -
-    buyTotalEth;
+  const openPositionsEth = await positionsEth(
+    wallet?.account.address ?? null,
+  );
+  const tradingPnl = sellTotalEth + openPositionsEth - buyTotalEth;
   const cashEth =
     LIVE && wallet
       ? Number(
@@ -137,6 +137,11 @@ async function observe(t: WatchToken): Promise<void> {
   let rejected: string | null = null;
   if (tradingPnl <= -GUARD.drawdownStopEth)
     rejected = "drawdown stop — trading P&L, deposits excluded";
+  else if (
+    d.proposal === "BUY" &&
+    openPositionsEth + GUARD.orderEth > GUARD.maxInventoryEth
+  )
+    rejected = "inventory cap — open positions at maximum";
   else if (d.proposal === "BUY" && cashEth < GUARD.orderEth * 1.2)
     rejected = "budget — cash below order size";
   else if (d.proposal === "SELL") {

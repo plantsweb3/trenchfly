@@ -23,7 +23,11 @@ from sensory import frame_to_drive
 HERE = Path(__file__).parent
 OUT = HERE / "calibration.json"
 
-NOISE = 0.9
+# Firing onset is a cliff at bg = threshold - rest = 7.0 with a uniform
+# resting potential, so the search brackets it and the held noise (which
+# produces ~1-3 mV of effective voltage jitter) widens the sparse band.
+NOISE = 15.0
+BG_LO, BG_HI = 5.5, 9.5
 TARGET_LO, TARGET_HI = 0.5, 3.0
 SEIZURE_HZ = 25.0
 
@@ -61,14 +65,14 @@ def main() -> None:
     }
 
     # ---- bisection on background drive ----
-    lo_b, hi_b = 0.0, 6.0
+    lo_b, hi_b = BG_LO, BG_HI
     best = None
-    for it in range(9):
+    for it in range(11):
         mid = (lo_b + hi_b) / 2
         reset(b)
         b.bg = np.float32(mid)
-        r = mean_rate(b, 200)
-        print(f"probe bg={mid:.3f} -> {r:.2f} Hz mean")
+        r = mean_rate(b, 150)
+        print(f"probe bg={mid:.3f} -> {r:.2f} Hz mean", flush=True)
         if r > SEIZURE_HZ or r > TARGET_HI:
             hi_b = mid
         elif r < TARGET_LO:

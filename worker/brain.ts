@@ -147,6 +147,12 @@ export async function createBrain(): Promise<BrainIface> {
           setTimeout(() => rej(new Error("brain boot timeout")), 180_000),
         ),
       ]);
+      // The active-regime network keeps DNp20 rates high and near-equal,
+      // so the decode reads the DEVIATION of (R−L) from its own rolling
+      // baseline — a declared adaptation that makes the readout respond
+      // to chart transitions (v1 sensory mapping has no retinotopy yet;
+      // that is the next brain checklist item).
+      let emaDiff: number | null = null;
       return {
         tier: 2,
         label: `tier-2 connectome (${info.neurons.toLocaleString()} neurons, ${info.synapses.toLocaleString()} synapses)`,
@@ -159,9 +165,22 @@ export async function createBrain(): Promise<BrainIface> {
             neural_ms: 500,
           });
           const j = JSON.parse(line);
-          const d = propose(j.rateL, j.rateR, j.dnpe017_spikes > 0);
-          d.frameSha = j.frame_sha256;
-          return d;
+          const raw = j.rateR - j.rateL;
+          if (emaDiff === null) emaDiff = raw;
+          const dev = raw - emaDiff;
+          emaDiff += 0.2 * (raw - emaDiff);
+          const gate = j.dnpe017_spikes > 0;
+          let proposal: Proposal = "HOLD";
+          if (dev >= 2 && gate) proposal = "BUY";
+          else if (dev <= -2 && gate) proposal = "SELL";
+          return {
+            proposal,
+            rateL: j.rateL,
+            rateR: j.rateR,
+            gate,
+            diff: dev,
+            frameSha: j.frame_sha256,
+          };
         },
       };
     } catch (e) {

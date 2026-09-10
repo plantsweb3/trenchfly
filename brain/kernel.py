@@ -40,6 +40,10 @@ class Brain:
         self.W = sparse.csr_matrix(
             (z["w_data"], z["w_indices"], z["w_indptr"]), shape=(n, n)
         )
+        # CSC copy for spike propagation: summing the columns of the
+        # neurons that actually spiked costs O(their synapses), not
+        # O(all 25M) — the difference between 143 s and seconds per obs.
+        self.Wc = self.W.tocsc()
         self.body_ids = z["body_ids"]
         self.index = {int(b): i for i, b in enumerate(self.body_ids)}
         self.v = np.full(n, V_REST, dtype=np.float32)
@@ -47,11 +51,15 @@ class Brain:
         self.refrac = np.zeros(n, dtype=np.float32)
         self.ext = np.zeros(n, dtype=np.float32)
         self.spike_counts = np.zeros(n, dtype=np.int64)
-        # tonic background drive + per-step noise: the declared "awake
+        # tonic background drive + held noise: the declared "awake
         # network" adapter that lets retinal transients propagate.
+        # Noise is redrawn every NOISE_EVERY steps (1 ms) and held — a
+        # declared model choice that trades spectral purity for speed.
         self.bg = np.float32(bg)
         self.noise_sigma = np.float32(noise_sigma)
         self.rng = np.random.default_rng(seed)
+        self._noise = np.zeros(n, dtype=np.float32)
+        self._step_i = 0
 
     def idx(self, body_ids: list[int]) -> np.ndarray:
         return np.array(
@@ -62,14 +70,17 @@ class Brain:
         self.ext[:] = 0
         self.ext[indices] = current
 
+    NOISE_EVERY = 10  # redraw held noise every 1 ms
+
     def step(self) -> np.ndarray:
         """Advance one 0.1 ms step; returns bool spike vector."""
         self.syn *= 1.0 - DT_MS / TAU_S
-        drive = self.syn + self.ext + self.bg
-        if self.noise_sigma > 0:
-            drive = drive + self.rng.normal(
+        if self.noise_sigma > 0 and self._step_i % self.NOISE_EVERY == 0:
+            self._noise = self.rng.normal(
                 0.0, self.noise_sigma, self.n
             ).astype(np.float32)
+        self._step_i += 1
+        drive = self.syn + self.ext + self.bg + self._noise
         dv = ((V_REST - self.v) + R_IN * drive) * (DT_MS / TAU_M)
         active = self.refrac <= 0
         self.v[active] += dv[active]
@@ -79,8 +90,10 @@ class Brain:
         if spikes.any():
             self.v[spikes] = V_RESET
             self.refrac[spikes] = REFRAC_MS
-            s = spikes.astype(np.float32)
-            self.syn += self.W @ s
+            idx = np.flatnonzero(spikes)
+            self.syn += np.asarray(
+                self.Wc[:, idx].sum(axis=1), dtype=np.float32
+            ).ravel()
             self.spike_counts[spikes] += 1
         return spikes
 

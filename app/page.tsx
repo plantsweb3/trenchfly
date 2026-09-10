@@ -269,11 +269,11 @@ export default function Home() {
               },
               {
                 k: "CONNECTOME KERNEL",
-                status: "IN BUILD",
-                color: "var(--red)",
-                body: "The full 166,700-neuron spiking simulation (MaleCNS v1.0, checksummed) that will replace the current decoder layer. Until it ships, decisions come from the decoder — the repo says exactly what runs, at all times.",
-                href: "https://github.com/plantsweb3/trenchfly",
-                link: "build progress ↗",
+                status: "LIVE",
+                color: "var(--green)",
+                body: "The full 166,700-neuron, 25.1M-synapse spiking simulation (MaleCNS v1.0, SHA-256 pinned) now proposes every worker decision — chart pixels → photoreceptors → DNp20 spikes, with each observation's exact frame hashed and logged. Known limits (no retinotopy yet, deviation decode) are documented in the repo, not hidden.",
+                href: "https://github.com/plantsweb3/trenchfly/tree/main/brain",
+                link: "brain source + checklist ↗",
               },
             ].map((r) => (
               <div

@@ -14,6 +14,7 @@ import {
   type Trade,
 } from "@/lib/sim";
 import NeuralActivity from "./NeuralActivity";
+import ArborPanel from "./ArborPanel";
 import FlySvg from "./FlySvg";
 import WalletPanel from "./WalletPanel";
 import { useBuzz } from "./useBuzz";
@@ -121,6 +122,16 @@ export default function Terminal() {
       <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)_320px]">
         {/* ---- left sidebar: CNS + fly ---- */}
         <div className="flex flex-col gap-4">
+          <ArborPanel
+            drive={{
+              dnp20L: Math.min(sim.rateL / 22, 1),
+              dnp20R: Math.min(sim.rateR / 22, 1),
+              gate: sim.dnpe017,
+              pam: sim.pamPulse > 0,
+              ppl: sim.pplPulse > 0,
+              ambient: activity,
+            }}
+          />
           <NeuralActivity drive={drive} />
 
           <div className="panel corner">
