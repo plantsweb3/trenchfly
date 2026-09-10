@@ -102,3 +102,17 @@
 .sourceChart > div { max-width:680px; margin:0 auto 20px; border:1px solid var(--desk-line); }
 @media(max-width:760px) { .arena { height:560px; }.deskPosition { inset:107px 0 55px; } }
 @media(max-width:480px) { .arena { height:448px; }.deskPosition { inset:108px -10px 54px; }.marketLabel { left:17px; right:17px; }.marketLabel strong { font-size:15px; }.sourceChart summary { flex-wrap:wrap; gap:8px; }.sourceChart summary span { font-size:9px; }.tradeButton { width:145px; }.tradeButton > span { font-size:13px; } }
+
+/* Stylized activity is driven by the recorded summary, not a live spike raster. */
+.neuralTriangle { transform-box:fill-box; transform-origin:center; stroke-width:.55; }
+.synapse { stroke-width:1.15; stroke-dasharray:4 72; opacity:0; }
+.breathing .neuralTriangle { animation:triangleBreathe 4.6s ease-in-out var(--triangle-delay) infinite; }
+.breathing .neuron { animation:neuralBreathe 3.7s ease-in-out var(--pulse-delay) infinite; }
+.breathing .synapse { opacity:.62; animation:transmit 3.2s linear var(--transmit-delay) infinite; }
+.breathing.firing .neuralTriangle { animation-duration:2.1s; }
+.breathing.firing .neuron { animation-duration:1.5s; }
+.breathing.firing .synapse { animation-duration:1.3s; opacity:.9; }
+@keyframes triangleBreathe { 0%,100% { transform:scale(.90); filter:brightness(.7); } 50% { transform:scale(1.09); filter:brightness(1.85); } }
+@keyframes neuralBreathe { 0%,100% { transform:scale(.90); filter:brightness(.85); } 45% { transform:scale(1.30); filter:brightness(1.65); } }
+@keyframes transmit { from { stroke-dashoffset:76; } to { stroke-dashoffset:0; } }
+@media(prefers-reduced-motion:reduce) { .breathing .neuralTriangle,.breathing .neuron,.breathing .synapse { animation:none; }.breathing .synapse { opacity:.2; } }

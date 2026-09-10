@@ -2,7 +2,7 @@
 
 [robinfly.net](https://robinfly.net) — a public experiment connecting a fruit-fly connectome model to market-chart observations on Robinhood Chain (mainnet 4663).
 
-The homepage shows the worker's published record. Its Blender-rigged fly sits at a trading desk; the monitor shows the exact chart image for the selected decision. BUY and SELL animations replay that decision. A schematic neural window uses the published left/right motor rates; its dots are not individual-neuron measurements. Paused or stale sessions do not automatically animate.
+The homepage shows the worker's published record. Its Blender-rigged fly sits at a trading desk; the monitor shows the exact chart image for the selected decision. BUY and SELL animations replay that decision. A schematic neural window uses the published left/right motor rates; its dots are not individual-neuron measurements. Paused or stale sessions do not automatically replay trades. Gentle wing fidgets, hand rubbing and face grooming are decorative idle motion.
 
 ## What is implemented
 

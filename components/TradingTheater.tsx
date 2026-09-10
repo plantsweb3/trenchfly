@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { canAutoPlay, decisionIdentity, decisionOutcome, rateIntensity } from "@/lib/session-playback";
 import { utcTime, type PublicSession, type SessionDecision } from "@/lib/session-state";
 import TradingDesk from "./TradingDesk";
@@ -17,18 +17,43 @@ const nodes = Array.from({ length: 48 }, (_, i) => {
 });
 const edges = nodes.flatMap((a, i) => nodes.slice(i + 1).flatMap((b, offset) => Math.hypot(a.x - b.x, a.y - b.y) < 54 ? [{ a: i, b: i + offset + 1 }] : []));
 
+const triangleKeys = new Set<string>();
+const triangles = nodes.flatMap((node, i) => {
+  const nearest = nodes.map((other, j) => ({ j, distance: Math.hypot(node.x - other.x, node.y - other.y) })).filter(other => other.j !== i).sort((a, b) => a.distance - b.distance).slice(0, 2);
+  const indices = [i, ...nearest.map(other => other.j)].sort((a, b) => a - b);
+  const key = indices.join("-");
+  if (triangleKeys.has(key)) return [];
+  triangleKeys.add(key);
+  return [{ key, side: node.side, points: indices.map(index => `${nodes[index].x},${nodes[index].y}`).join(" "), delay: -(i % 11) * .41 }];
+});
+
 function NeuralWindow({ decision, tier, active, pulse }: { decision?: SessionDecision; tier: PublicSession["tier"]; active: boolean; pulse: number }) {
+  const windowRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  const glowId = `neural-glow-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  useEffect(() => {
+    const element = windowRef.current;
+    if (!element) return;
+    let intersecting = false;
+    const sync = () => setVisible(intersecting && !document.hidden);
+    const observer = new IntersectionObserver(([entry]) => { intersecting = entry.isIntersecting; sync(); });
+    observer.observe(element); document.addEventListener("visibilitychange", sync);
+    return () => { observer.disconnect(); document.removeEventListener("visibilitychange", sync); };
+  }, []);
   const hasRates = decision?.rateL !== null && decision?.rateL !== undefined && decision.rateL >= 0 && decision?.rateR !== null && decision?.rateR !== undefined && decision.rateR >= 0;
   const left = rateIntensity(decision?.rateL), right = rateIntensity(decision?.rateR);
-  return <div className={s.neuralWindow}>
+  return <div className={s.neuralWindow} ref={windowRef}>
     <div className={s.windowBar}><span>NEURAL ACTIVITY</span><span>{tier === 2 ? "CONNECTOME" : tier === 1 ? "PROXY" : "UNREPORTED"}</span></div>
-    <svg key={pulse} className={`${s.network} ${active && hasRates ? s.firing : ""}`} viewBox="0 0 340 208" role="img" aria-label={hasRates ? `Schematic motor activity: left ${decision!.rateL!.toFixed(1)} hertz, right ${decision!.rateR!.toFixed(1)} hertz. Not a map of individual neuron activity.` : "Neural activity unavailable; no recorded motor rates"}>
+    <svg key={pulse} className={`${s.network} ${hasRates && visible ? s.breathing : ""} ${active && hasRates && visible ? s.firing : ""}`} viewBox="0 0 340 208" role="img" aria-label={hasRates ? `Schematic motor activity: left ${decision!.rateL!.toFixed(1)} hertz, right ${decision!.rateR!.toFixed(1)} hertz. Not a map of individual neuron activity.` : "Neural activity unavailable; no recorded motor rates"}>
+      <defs><filter id={glowId} x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="2.3" result="bloom" /><feMerge><feMergeNode in="bloom" /><feMergeNode in="SourceGraphic" /></feMerge></filter></defs>
+      <g className={s.facets}>{triangles.map(triangle => <polygon key={triangle.key} points={triangle.points} className={s.neuralTriangle} fill={triangle.side ? "#79c6ee" : "#c9fc5a"} stroke={triangle.side ? "#7bccf3" : "#d7ff3f"} style={{ opacity: hasRates ? .06 + (triangle.side ? right : left) * .12 : .025, "--triangle-delay": `${triangle.delay}s` } as CSSProperties} />)}</g>
       <g className={s.edges}>{edges.map(({ a, b }) => <line key={`${a}-${b}`} x1={nodes[a].x} y1={nodes[a].y} x2={nodes[b].x} y2={nodes[b].y} opacity={hasRates ? .13 + (nodes[a].side ? right : left) * .45 : .1} />)}</g>
-      {nodes.map((node, i) => <circle key={i} cx={node.x} cy={node.y} r={i % 7 === 0 ? 3.4 : 2} className={s.neuron} fill={node.side ? "#93d5f7" : "#d7ff3f"} style={{ opacity: hasRates ? .18 + (node.side ? right : left) * .82 : .12, "--pulse-delay": `${node.delay}s` } as CSSProperties} />)}
+      {hasRates && <g className={s.transmissions} filter={`url(#${glowId})`}>{edges.filter((_, i) => i % 5 === 0).map(({ a, b }, i) => <line key={`${a}-${b}`} className={s.synapse} x1={nodes[a].x} y1={nodes[a].y} x2={nodes[b].x} y2={nodes[b].y} stroke={nodes[a].side ? "#93d5f7" : "#d7ff3f"} style={{ "--transmit-delay": `${-(i % 9) * .37}s` } as CSSProperties} />)}</g>}
+      <g filter={`url(#${glowId})`}>{nodes.map((node, i) => <circle key={i} cx={node.x} cy={node.y} r={i % 7 === 0 ? 3.6 : 2.3} className={s.neuron} fill={node.side ? "#a6e4ff" : "#e2ff86"} style={{ opacity: hasRates ? .24 + (node.side ? right : left) * .76 : .12, "--pulse-delay": `${-(i % 13) * .28}s` } as CSSProperties} />)}</g>
       <text x="58" y="195">LEFT OUTPUT</text><text x="211" y="195">RIGHT OUTPUT</text>
     </svg>
     <div className={s.rates}><div><span>LEFT MOTOR</span><strong>{hasRates ? decision!.rateL!.toFixed(1) : "—"}<small>Hz</small></strong><div className={s.rateTrack}><i style={{ width: `${left * 100}%` }} /></div></div><div><span>RIGHT MOTOR</span><strong>{hasRates ? decision!.rateR!.toFixed(1) : "—"}<small>Hz</small></strong><div className={s.rateTrack}><i style={{ width: `${right * 100}%` }} /></div></div></div>
-    <p className={s.neuralNote}>Summary visualization from recorded motor rates. Dots and connections are illustrative, not individual neuron measurements. Scale: 0–400 Hz.</p>
+    <p className={s.neuralNote}>Glowing facets visualize the recorded motor-rate summary. Pulses and connections are illustrative, not individual neuron measurements. Scale: 0–400 Hz.</p>
   </div>;
 }
 
@@ -88,6 +113,6 @@ export default function TradingTheater({ feed, decision, now, historical, unavai
       </aside>
     </div>
     <details className={s.sourceChart}><summary>Inspect the exact chart input <span>{decision?.symbol ?? "Awaiting frame"} · {decision ? `${utcTime(decision.t)} UTC` : "Unreported"}</span></summary><div>{chart}</div></details>
-    <div className={s.theaterFooter}><span>Animation replays a published observation. It does not place orders.</span><span>{decision?.frameSha ? `INPUT ${decision.frameSha.slice(0, 12)}…` : "CHART SOURCE PENDING"}</span></div>
+    <div className={s.theaterFooter}><span>Idle grooming is decorative. Trading reaches replay recorded decisions; they do not place orders.</span><span>{decision?.frameSha ? `INPUT ${decision.frameSha.slice(0, 12)}…` : "CHART SOURCE PENDING"}</span></div>
   </div>;
 }

@@ -28,6 +28,8 @@ export default function TradingDesk({ className, frameSha, reaction, reactionKey
     let draw = () => {};
     let idle: AnimationAction | undefined, active: AnimationAction | undefined;
     const actions = new Map<string, AnimationAction>();
+    let idleSeconds = 0, nextGroomAt = 6.5, groomIndex = 0;
+    let groom = () => {};
     const releaseModel = (root: Group) => root.traverse(obj => {
       const mesh = obj as Mesh;
       if (!mesh.isMesh) return;
@@ -36,16 +38,21 @@ export default function TradingDesk({ className, frameSha, reaction, reactionKey
     });
     const frame = (time: number) => {
       raf = 0;
-      if (disposed || !visible || document.hidden || media.matches || !motionRef.current) return;
+      if (disposed || !visible || document.hidden || media.matches) return;
       if (!last || time - last >= 1000 / 30) {
-        mixer?.update(last ? Math.min((time - last) / 1000, .1) : 0);
+        const delta = last ? Math.min((time - last) / 1000, .1) : 0;
+        if (!motionRef.current && active === idle) {
+          idleSeconds += delta;
+          if (idleSeconds >= nextGroomAt) { idleSeconds = 0; nextGroomAt = 13 + (groomIndex % 3) * 2; groom(); }
+        }
+        mixer?.update(delta);
         last = time; draw();
       }
       raf = requestAnimationFrame(frame);
     };
     const sync = () => {
       cancelAnimationFrame(raf); raf = 0; last = 0;
-      if (!motionRef.current || media.matches) {
+      if (media.matches) {
         if (mixer && idle) { mixer.stopAllAction(); idle.reset().play(); active = idle; mixer.update(0); }
         draw(); return;
       }
@@ -86,7 +93,7 @@ export default function TradingDesk({ className, frameSha, reaction, reactionKey
           renderer.setSize(width, height, false); draw();
         });
         resize.observe(host);
-        const gltf = await new GLTFLoader().loadAsync("/models/robinfly/robinfly-desk.glb");
+        const gltf = await new GLTFLoader().loadAsync("/models/robinfly/robinfly-desk-v2.glb");
         if (disposed) { releaseModel(gltf.scene); return; }
         model = gltf.scene; scene.add(model);
         const screen = model.getObjectByName("RF_ChartScreen") as Mesh;
@@ -139,11 +146,19 @@ export default function TradingDesk({ className, frameSha, reaction, reactionKey
           next.reset().setLoop(THREE.LoopOnce, 1); next.clampWhenFinished = true;
           next.enabled = true; next.setEffectiveWeight(1).setEffectiveTimeScale(1).play();
           if (active && active !== next) active.crossFadeTo(next, .12, false);
-          active = next;
+          active = next; idleSeconds = 0;
+        };
+        groom = () => {
+          if (motionRef.current || media.matches || disposed || active !== idle) return;
+          const next = actions.get(groomIndex++ % 2 === 0 ? "DeskHandRub" : "DeskFaceRub");
+          if (!next) return;
+          next.reset().setLoop(THREE.LoopOnce, 1); next.clampWhenFinished = true;
+          next.enabled = true; next.setEffectiveWeight(1).setEffectiveTimeScale(1).play();
+          active?.crossFadeTo(next, .25, false); active = next;
         };
         mixer.addEventListener("finished", event => {
           if (event.action !== active || !idle) return;
-          idle.reset().setEffectiveWeight(1).play(); event.action.crossFadeTo(idle, .15, false); active = idle;
+          idle.reset().setEffectiveWeight(1).play(); event.action.crossFadeTo(idle, .22, false); active = idle; idleSeconds = 0;
         });
         setReady(true); sync(); draw();
       } catch {
