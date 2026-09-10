@@ -3,3 +3,4 @@ data/
 *.npz
 __pycache__/
 runs-build.log
+runs/

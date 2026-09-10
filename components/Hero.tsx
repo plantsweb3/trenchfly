@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import FlySvg from "./FlySvg";
+import FlyMascot from "./FlyMascot";
 import BrainCloud from "./BrainCloud";
 import { FLY_WALLET, ROBINHOOD_CHAIN } from "@/lib/chain";
 
 const CHIPS = [
   ["166,700", "NEURONS"],
-  ["25.6M", "CONNECTIONS"],
+  ["25.1M", "SYNAPSES"],
   ["$100", "BANKROLL"],
   ["3", "LAUNCHPADS"],
 ];
@@ -40,7 +40,7 @@ export default function Hero() {
       <div className="relative z-10 flex items-start justify-between px-5 pt-5 text-[9px] tracking-[0.25em] text-ink-dim sm:text-[10px]">
         <div>
           <span className="anim-blink mr-2 inline-block h-2 w-2 bg-red align-middle" />
-          NEURAL REPLAY · LIVE
+          NEURAL REPLAY · SIM
           <div className="mt-1 text-lime">
             {(spikes / 1e6).toFixed(2)}M SPIKES
           </div>
@@ -86,7 +86,7 @@ export default function Hero() {
           className="anim-rise w-[260px] max-w-[68vw] sm:w-[330px]"
           style={{ animationDelay: "0.1s" }}
         >
-          <FlySvg className="block w-full" />
+          <FlyMascot eager className="block w-full" />
         </div>
 
         <h1

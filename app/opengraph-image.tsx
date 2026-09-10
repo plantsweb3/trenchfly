@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
 export const alt =
   "TRENCHFLY — a fly brain trading memecoins on Robinhood Chain";
 export const size = { width: 1200, height: 630 };
@@ -14,8 +13,8 @@ export default function OgImage() {
           width: "100%",
           height: "100%",
           display: "flex",
-          background: "#04070d",
-          color: "#d7e4ee",
+          background: "#050604",
+          color: "#e2e8d8",
           fontFamily: "sans-serif",
           position: "relative",
         }}
@@ -24,7 +23,7 @@ export default function OgImage() {
           style={{
             position: "absolute",
             inset: 24,
-            border: "1px solid #12202f",
+            border: "1px solid #1c2410",
             display: "flex",
           }}
         />
@@ -42,7 +41,7 @@ export default function OgImage() {
               display: "flex",
               fontSize: 22,
               letterSpacing: 8,
-              color: "#64798c",
+              color: "#7c856c",
             }}
           >
             NEURAL REPLAY · LIVE · CHAIN 4663
@@ -56,7 +55,7 @@ export default function OgImage() {
               marginTop: 18,
             }}
           >
-            <span style={{ color: "#d7e4ee" }}>TRENCH</span>
+            <span style={{ color: "#e2e8d8" }}>TRENCH</span>
             <span style={{ color: "#ccf53d" }}>FLY</span>
           </div>
           <div
@@ -64,7 +63,7 @@ export default function OgImage() {
               display: "flex",
               fontSize: 30,
               lineHeight: 1.4,
-              color: "#8fa6b8",
+              color: "#9aa87e",
               marginTop: 22,
               maxWidth: 700,
             }}

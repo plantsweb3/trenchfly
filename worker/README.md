@@ -37,10 +37,12 @@ npm run live        # real swaps. only after paper looks sane.
 
 ## Guard
 
-ETH-denominated port of the reference risk rules (`config.ts`): 0.0025 ETH max
-order, no daily cap, drawdown stop at 0.005 ETH (stops **new** orders —
-it does not liquidate holdings), 0.50% slippage limit. The guard can
-reject a proposal; it cannot replace it.
+ETH-denominated port of the reference risk rules (`config.ts`): 0.0025 ETH
+max order, no daily cap, 0.0125 ETH open-position cap (creator-reward
+inflows can never be deployed beyond ~5 order-sizes), drawdown stop at
+0.005 ETH of **trading P&L** (deposits excluded; stops new orders, does
+not liquidate), 0.50% slippage limit. The guard can reject a proposal;
+it cannot replace it.
 
 Pons tokens still on the bonding curve won't quote through the v3
 QuoterV2 and are skipped — add them once they graduate to a pool, or

@@ -10,6 +10,8 @@ import {
   copyFileSync,
   existsSync,
   mkdirSync,
+  readdirSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -85,18 +87,32 @@ export function maybePublish(
     );
     const framesDir = join(WT, "frames");
     mkdirSync(framesDir, { recursive: true });
-    for (const d of payload.recent.slice(-12)) {
-      if (!d.frameSha) continue;
-      const src = join(FRAMES_SRC, `${d.frameSha}.png`);
-      const dst = join(framesDir, `${d.frameSha}.png`);
+    const keep = new Set(
+      payload.recent
+        .slice(-12)
+        .map((d) => d.frameSha && `${d.frameSha}.png`)
+        .filter(Boolean) as string[],
+    );
+    for (const name of keep) {
+      const src = join(FRAMES_SRC, name);
+      const dst = join(framesDir, name);
       if (existsSync(src) && !existsSync(dst)) copyFileSync(src, dst);
+    }
+    // working set stays bounded: drop frames no longer referenced
+    for (const f of readdirSync(framesDir)) {
+      if (!keep.has(f)) unlinkSync(join(framesDir, f));
     }
     git(`git -C "${WT}" add -A`);
     git(
       `git -C "${WT}" -c user.name="trenchfly worker" -c user.email="fly@trenchfly.xyz" ` +
         `commit -m "feed: obs ${payload.obs}" --allow-empty`,
     );
-    git(`git -C "${WT}" push -q origin feed`);
+    try {
+      git(`git -C "${WT}" push -q origin feed`);
+    } catch {
+      // remote moved (or first divergence): worker is the authority
+      git(`git -C "${WT}" push -q --force origin feed`);
+    }
   } catch (e) {
     console.error(`feed: publish failed — ${(e as Error).message}`);
   }

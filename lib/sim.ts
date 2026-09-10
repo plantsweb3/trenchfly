@@ -185,9 +185,21 @@ export function tick(s: SimState, rng: () => number): SimState {
   const px = coins[active].price;
 
   if (proposal !== "HOLD") {
+    // guard parity with the worker: same rules the site advertises
+    let positionsValue = 0;
+    for (const t of TICKERS) positionsValue += holdings[t] * coins[t].price;
+    const equityNow = cash + positionsValue;
+
     let rejected: string | null = null;
-    if (rng() < 0.07)
+    if (equityNow <= CAPITAL - 20)
+      rejected = "drawdown stop — no new orders";
+    else if (rng() < 0.07)
       rejected = "price — slippage 0.63% over 0.50% limit";
+    else if (
+      proposal === "BUY" &&
+      positionsValue + ORDER_LIMIT > 5 * ORDER_LIMIT
+    )
+      rejected = "inventory cap — open positions at maximum";
     else if (proposal === "BUY" && cash < 1.05)
       rejected = "budget — cash below minimum order";
     else if (proposal === "SELL" && holdings[active] * px < 0.25)

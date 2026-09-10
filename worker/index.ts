@@ -4,7 +4,7 @@
 
 import "dotenv/config";
 import { config as loadEnv } from "dotenv";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { formatEther, type Address } from "viem";
@@ -79,12 +79,35 @@ function recordDecision(
   );
 }
 const paperHoldings = new Map<string, number>();
+const hkey = (t: WatchToken) => t.address.toLowerCase();
 
 // Creator rewards / deposits flow into this wallet, so drawdown is measured
 // on TRADING P&L only (sell proceeds + open position value − buy costs) —
 // never on the raw balance, which is expected to grow with coin volume.
+// Totals persist across restarts so the drawdown stop keeps its memory.
+const STATE_PATH = join(dir, "runs", "state.json");
 let buyTotalEth = 0;
 let sellTotalEth = 0;
+try {
+  if (existsSync(STATE_PATH)) {
+    const st = JSON.parse(readFileSync(STATE_PATH, "utf8"));
+    buyTotalEth = st.buyTotalEth ?? 0;
+    sellTotalEth = st.sellTotalEth ?? 0;
+    ordersTotal = st.ordersTotal ?? 0;
+  }
+} catch {
+  /* fresh state */
+}
+function saveState() {
+  try {
+    writeFileSync(
+      STATE_PATH,
+      JSON.stringify({ buyTotalEth, sellTotalEth, ordersTotal }),
+    );
+  } catch {
+    /* non-fatal */
+  }
+}
 
 async function positionsEth(address: Address | null): Promise<number> {
   let v = 0;
@@ -92,8 +115,8 @@ async function positionsEth(address: Address | null): Promise<number> {
     const px = t.history[t.history.length - 1];
     if (!px) continue;
     if (!LIVE || !address) {
-      v += (paperHoldings.get(t.symbol) ?? 0) * px;
-    } else if (t.address && t.decimals) {
+      v += (paperHoldings.get(hkey(t)) ?? 0) * px;
+    } else if (t.address && t.decimals !== undefined) {
       const bal = await tokenBalance(t.address as Address, address);
       if (bal > 0n) v += (Number(bal) / 10 ** t.decimals) * px;
     }
@@ -146,7 +169,7 @@ async function observe(t: WatchToken): Promise<void> {
   t.history = [...t.history.slice(-99), q.priceEth];
   if (t.history.length < 8) return; // let the chart warm up
 
-  const d = await BRAIN.decide(t.symbol, t.history, q.priceEth);
+  const d = await BRAIN.decide(t.symbol, t.history, q.priceEth, t.address);
   const px = q.priceEth;
   const line = `${t.symbol.padEnd(8)} ${px.toExponential(3)} ETH  L ${d.rateL.toFixed(1)} R ${d.rateR.toFixed(1)} Δ ${d.diff >= 0 ? "+" : ""}${d.diff.toFixed(2)}  ${d.proposal}`;
 
@@ -172,7 +195,7 @@ async function observe(t: WatchToken): Promise<void> {
       : paperEth;
 
   let rejected: string | null = null;
-  if (tradingPnl <= -GUARD.drawdownStopEth)
+  if (d.proposal === "BUY" && tradingPnl <= -GUARD.drawdownStopEth)
     rejected = "drawdown stop — trading P&L, deposits excluded";
   else if (
     d.proposal === "BUY" &&
@@ -181,14 +204,20 @@ async function observe(t: WatchToken): Promise<void> {
     rejected = "inventory cap — open positions at maximum";
   else if (d.proposal === "BUY" && cashEth < GUARD.orderEth * 1.2)
     rejected = "budget — cash below order size";
-  else if (d.proposal === "SELL") {
-    const qty = LIVE
-      ? wallet
-        ? Number(await tokenBalance(t.address as Address, wallet.account.address)) /
-          10 ** t.decimals
-        : 0
-      : (paperHoldings.get(t.symbol) ?? 0);
-    if (qty * px < GUARD.orderEth * 0.1) rejected = "inventory — nothing to sell";
+  let sellableQty = 0;
+  let sellableRaw = 0n;
+  if (d.proposal === "SELL") {
+    if (LIVE && wallet) {
+      sellableRaw = await tokenBalance(
+        t.address as Address,
+        wallet.account.address,
+      );
+      sellableQty = Number(sellableRaw) / 10 ** t.decimals;
+    } else {
+      sellableQty = paperHoldings.get(hkey(t)) ?? 0;
+    }
+    if (sellableQty * px < GUARD.orderEth * 0.1)
+      rejected = "inventory — nothing to sell";
   }
 
   if (rejected) {
@@ -207,28 +236,37 @@ async function observe(t: WatchToken): Promise<void> {
     amount:
       d.proposal === "BUY"
         ? GUARD.orderEth
-        : Math.min(
-            GUARD.orderEth / px,
-            paperHoldings.get(t.symbol) ?? GUARD.orderEth / px,
-          ),
+        : Math.min(GUARD.orderEth / px, sellableQty),
     priceEth: px,
   };
+  if (d.proposal === "SELL" && LIVE) {
+    // authoritative raw sell amount: whole balance if it fits the order
+    // cap, else a bigint-safe fraction of it
+    const frac = Math.min(GUARD.orderEth / (sellableQty * px), 1);
+    intent.amountRaw =
+      frac >= 1
+        ? sellableRaw
+        : (sellableRaw * BigInt(Math.floor(frac * 1e9))) / 1_000_000_000n;
+  }
 
   if (!LIVE) {
     if (intent.side === "BUY") {
+      buyTotalEth += intent.amount;
       paperEth -= intent.amount;
       paperHoldings.set(
-        t.symbol,
-        (paperHoldings.get(t.symbol) ?? 0) + intent.amount / px,
+        hkey(t),
+        (paperHoldings.get(hkey(t)) ?? 0) + intent.amount / px,
       );
     } else {
       paperHoldings.set(
-        t.symbol,
-        (paperHoldings.get(t.symbol) ?? 0) - intent.amount,
+        hkey(t),
+        (paperHoldings.get(hkey(t)) ?? 0) - intent.amount,
       );
       paperEth += intent.amount * px;
+      sellTotalEth += intent.amount * px;
     }
     ordersTotal += 1;
+    saveState();
     console.log(`${line}  ✓ PAPER FILL`);
     logRun({ mode: "paper", tier: BRAIN.tier, frameSha: d.frameSha, ...intent });
     recordDecision(t, d, "paper fill", true);
@@ -236,7 +274,10 @@ async function observe(t: WatchToken): Promise<void> {
   }
 
   const hash = await placeLive(intent);
+  if (intent.side === "BUY") buyTotalEth += intent.amount;
+  else sellTotalEth += intent.amount * px;
   ordersTotal += 1;
+  saveState();
   recordDecision(t, d, `live ${hash}`, true);
   console.log(`${line}  ✓ ${robinhoodChain.blockExplorers!.default.url}/tx/${hash}`);
   logRun({ mode: "live", tier: BRAIN.tier, frameSha: d.frameSha, ...intent, hash });
@@ -274,7 +315,13 @@ async function main() {
       try {
         const found = await scanNewPools();
         for (const f of found) {
-          if (watchlist.some((t) => t.address.toLowerCase() === f.address.toLowerCase()))
+          if (
+            watchlist.some(
+              (t) =>
+                t.address &&
+                t.address.toLowerCase() === f.address.toLowerCase(),
+            )
+          )
             continue;
           watchlist.push({
             symbol: f.symbol,
@@ -286,8 +333,12 @@ async function main() {
           logRun({ discovered: f });
         }
         while (watchlist.length > MAX_WATCH) {
-          const idx = watchlist.findIndex((t) => t.venue === "new pair");
-          if (idx === -1) break;
+          const idx = watchlist.findIndex(
+            (t) =>
+              t.venue === "new pair" &&
+              (paperHoldings.get(hkey(t)) ?? 0) <= 0,
+          );
+          if (idx === -1) break; // never rotate out a held position
           const [gone] = watchlist.splice(idx, 1);
           console.log(`rotated out: ${gone.symbol}`);
         }

@@ -32,7 +32,9 @@ const FRAME_BASE =
   "https://raw.githubusercontent.com/plantsweb3/trenchfly/feed/frames";
 
 function ago(iso: string): string {
-  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  const ms = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(ms)) return "—";
+  const s = Math.max(0, ms / 1000);
   if (s < 90) return `${Math.round(s)}s ago`;
   if (s < 5400) return `${Math.round(s / 60)}m ago`;
   return `${Math.round(s / 3600)}h ago`;
@@ -59,10 +61,12 @@ export default function RealSession() {
     };
   }, []);
 
-  const lastFrame = feed?.recent
+  const rawSha = feed?.recent
     ?.slice()
     .reverse()
     .find((d) => d.frameSha)?.frameSha;
+  const lastFrame =
+    rawSha && /^[0-9a-f]{16,64}$/.test(rawSha) ? rawSha : undefined;
   const decisions = feed?.recent?.slice(-6).reverse() ?? [];
   const stale = feed
     ? Date.now() - new Date(feed.updatedAt).getTime() > 15 * 60_000
@@ -88,6 +92,10 @@ export default function RealSession() {
               src={`${FRAME_BASE}/${lastFrame}.png`}
               alt="The exact chart frame the connectome last saw"
               className="pixelated block w-full border-b border-line"
+              style={{ aspectRatio: "16 / 9", objectFit: "cover" }}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
             />
           )}
           <div className="flex items-center justify-between px-3 py-1.5 text-[9px] text-ink-dim">

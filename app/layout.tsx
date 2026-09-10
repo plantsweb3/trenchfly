@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://trenchfly.xyz"),
   title: "TRENCHFLY — a fly brain trading memecoins on Robinhood Chain",
   description:
-    "166,700 neurons. 25.6 million connections. $100 and an EVM wallet. The fly watches Pons, long.xyz and o1 launches on Robinhood Chain; its motor neurons sign the orders. Profitable learning has not been demonstrated.",
+    "166,700 neurons. 25.1 million synapses. $100 and an EVM wallet. The fly watches Pons, long.xyz and o1 launches on Robinhood Chain; its motor neurons sign the orders. Profitable learning has not been demonstrated.",
   openGraph: {
     title: "TRENCHFLY",
     description:

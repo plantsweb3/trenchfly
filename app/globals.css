@@ -14,7 +14,7 @@
   --orange: #ff8c3a;
   --ink: #e2e8d8;
   --ink-dim: #7c856c;
-  --ink-faint: #49523a;
+  --ink-faint: #6a7458;
 }
 
 @theme inline {
@@ -318,7 +318,17 @@ body::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .anim-float, .anim-blink, .wing-a, .wing-b { animation: none; }
+  .anim-float, .anim-blink, .wing-a, .wing-b,
+  .anim-rise, .ticker-track, .trade-row, .fly-jolt {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
 }
 
 .ticker-track {

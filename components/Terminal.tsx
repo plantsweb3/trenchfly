@@ -14,7 +14,7 @@ import {
   type Trade,
 } from "@/lib/sim";
 import ArborPanel from "./ArborPanel";
-import FlySvg from "./FlySvg";
+import FlyMascot from "./FlyMascot";
 import WalletPanel from "./WalletPanel";
 import RealSession from "./RealSession";
 import { useBuzz } from "./useBuzz";
@@ -44,9 +44,11 @@ export default function Terminal() {
     const seed = (Date.now() ^ 0x5f3759df) >>> 0;
     seedRef.current = seed % 100000;
     rngRef.current = mulberry32(seed);
-    setSim(createSim(seed));
+    let cur = createSim(seed);
+    setSim(cur);
     const id = setInterval(() => {
-      setSim((s) => (s ? tick(s, rngRef.current) : s));
+      cur = tick(cur, rngRef.current);
+      setSim(cur);
     }, OBS_MS);
     return () => clearInterval(id);
   }, []);
@@ -100,8 +102,8 @@ export default function Terminal() {
       {/* session strip */}
       <div className="panel mb-4 flex flex-wrap items-center gap-x-6 gap-y-1 px-4 py-2 text-[10px] tracking-[0.18em] text-ink-dim">
         <span className="flex items-center gap-2 text-ink">
-          <span className="anim-blink inline-block h-2 w-2 bg-green" />
-          LIVE PAPER SESSION
+          <span className="anim-blink inline-block h-2 w-2 bg-amber" />
+          TERMINAL SIM — REAL SESSION IN SIDEBAR
         </span>
         <span>SEED {String(seedRef.current).padStart(5, "0")}</span>
         <span>OBS {sim.obs.toString().padStart(4, "0")}</span>
@@ -138,23 +140,29 @@ export default function Terminal() {
               <span>ROBINHOOD INPUT</span>
             </div>
             <div className={`bg-inset px-2 pt-2 ${pressed ? "fly-jolt" : ""}`}>
-              <FlySvg phone className="block w-full" />
+              <FlyMascot reaction={pressed} className="block w-full" />
             </div>
             <div className="flex items-center gap-3 border-t border-line bg-inset px-3 py-3">
               <TradeButton side="BUY" active={pressed === "BUY"} />
               <TradeButton side="SELL" active={pressed === "SELL"} />
               <button
                 onClick={toggleBuzz}
+                aria-pressed={buzzOn}
                 className="ml-auto border border-line px-2 py-1.5 text-[9px] tracking-[0.2em] text-ink-dim transition-colors hover:border-lime hover:text-lime"
               >
                 BUZZ {buzzOn ? "ON" : "OFF"}
               </button>
             </div>
             <div className="flex items-center justify-between border-t border-line px-3 py-2 text-[10px]">
-              <span className="font-bold tracking-[0.2em] text-lime">
-                DEPLOY COMPLETE
+              <span
+                className="font-bold tracking-[0.2em]"
+                style={{ color: FLY_WALLET ? "var(--lime)" : "var(--amber)" }}
+              >
+                {FLY_WALLET ? "DEPLOY COMPLETE" : "DEPLOY PENDING"}
               </span>
-              <span className="text-ink-dim">Fly is onchain</span>
+              <span className="text-ink-dim">
+                {FLY_WALLET ? "Fly is onchain" : "awaiting wallet"}
+              </span>
             </div>
           </div>
 
@@ -450,7 +458,16 @@ function SpikeRaster({ activity }: { activity: number }) {
     }
     let raf = 0;
     let last = 0;
+    let onScreen = true;
+    const io = new IntersectionObserver(([e]) => {
+      onScreen = e.isIntersecting;
+    });
+    io.observe(canvas);
     const step = (t: number) => {
+      if (!onScreen || document.hidden) {
+        raf = requestAnimationFrame(step);
+        return;
+      }
       if (t - last > 36) {
         last = t;
         ctx.drawImage(canvas, -2, 0);
@@ -470,7 +487,10 @@ function SpikeRaster({ activity }: { activity: number }) {
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      io.disconnect();
+    };
   }, []);
 
   return (
@@ -485,6 +505,7 @@ function SpikeRaster({ activity }: { activity: number }) {
       </div>
       <canvas
         ref={ref}
+        aria-hidden="true"
         className="block h-[96px] w-full"
         style={{ imageRendering: "pixelated" }}
       />
@@ -609,7 +630,7 @@ function HoldingRow({ sim, ticker }: { sim: SimState; ticker: Ticker }) {
 
 /* ================= trade log ================= */
 
-type LogRow = Trade & { repeat?: number };
+type LogRow = Trade & { repeat?: number; keyId?: number };
 
 function collapseRows(trades: Trade[]): LogRow[] {
   const out: LogRow[] = [];
@@ -617,6 +638,7 @@ function collapseRows(trades: Trade[]): LogRow[] {
     const prev = out[out.length - 1];
     if (prev?.rejected && tr.rejected && prev.rejected === tr.rejected) {
       prev.repeat = (prev.repeat ?? 1) + 1;
+      prev.keyId = tr.id; // anchor on the oldest of the run — stable key
       continue;
     }
     out.push({ ...tr });
@@ -693,7 +715,7 @@ function TradeLog({
           </div>
         )}
         {rows.map((tr) => (
-          <TradeRow key={tr.id} tr={tr} />
+          <TradeRow key={tr.keyId ?? tr.id} tr={tr} />
         ))}
       </div>
       <div className="border-t border-line px-3 py-2 text-[9px] leading-snug text-ink-faint">

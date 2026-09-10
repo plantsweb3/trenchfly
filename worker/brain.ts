@@ -10,8 +10,11 @@
 // slope plus mean-reverting noise. Used only when the compiled graph or
 // calibration is missing; the active tier is logged loudly either way.
 //
-// Decode rule (fixed, one audited place): rateR - rateL >= +2 Hz with a
-// DNpe017 spike proposes BUY; <= -2 Hz proposes SELL; otherwise HOLD.
+// Decode rules (each declared where it runs): tier-1 uses the raw
+// rateR - rateL diff; tier-2 uses the DEVIATION of that diff from a
+// per-token rolling baseline (the active-regime network keeps absolute
+// rates high and near-equal). Both propose BUY at >= +2 Hz with a
+// DNpe017 spike, SELL at <= -2 Hz, otherwise HOLD.
 
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -36,7 +39,7 @@ export interface Decision {
 export interface BrainIface {
   tier: 1 | 2;
   label: string;
-  decide(symbol: string, history: number[], price: number): Promise<Decision>;
+  decide(symbol: string, history: number[], price: number, key?: string): Promise<Decision>;
 }
 
 function propose(rateL: number, rateR: number, gate: boolean): Decision {
@@ -76,9 +79,14 @@ function tier1Decide(history: number[]): Decision {
 /* ---------------- tier-2 connectome client ---------------- */
 
 class Tier2Client {
-  private proc: ChildProcessWithoutNullStreams;
+  proc: ChildProcessWithoutNullStreams;
   private rl: Interface;
-  private pending: Array<(line: string) => void> = [];
+  private pending = new Map<
+    number,
+    { resolve: (j: Record<string, unknown>) => void; reject: (e: Error) => void }
+  >();
+  private nextId = 1;
+  private dead: Error | null = null;
   ready: Promise<{ neurons: number; synapses: number }>;
 
   constructor(python: string, script: string) {
@@ -92,38 +100,62 @@ class Tier2Client {
     });
     let isReady = false;
     this.rl.on("line", (line) => {
-      if (!isReady) {
-        try {
-          const j = JSON.parse(line);
-          if (j.ready) {
-            isReady = true;
-            readyResolve(j);
-            return;
-          }
-        } catch {
-          return; // startup noise
-        }
+      let j: Record<string, unknown>;
+      try {
+        j = JSON.parse(line);
+      } catch {
+        return; // startup noise / stray library output — never shifts pairing
       }
-      const next = this.pending.shift();
-      if (next) next(line);
+      if (!isReady && j.ready) {
+        isReady = true;
+        readyResolve(j as { neurons: number; synapses: number });
+        return;
+      }
+      const id = typeof j.id === "number" ? j.id : -1;
+      const waiter = this.pending.get(id);
+      if (!waiter) return; // unmatched line — ignored, pairing intact
+      this.pending.delete(id);
+      waiter.resolve(j);
     });
-    this.proc.on("exit", (code) => {
-      readyReject(new Error(`brain exited (${code})`));
-    });
+    const fail = (why: string) => {
+      this.dead = new Error(why);
+      readyReject(this.dead);
+      for (const [, w] of this.pending) w.reject(this.dead);
+      this.pending.clear();
+    };
+    this.proc.on("exit", (code) => fail(`brain exited (${code})`));
+    this.proc.stdin.on("error", (e) => fail(`brain stdin: ${e.message}`));
     this.proc.stderr.on("data", () => {}); // numpy chatter
   }
 
-  request(obj: unknown, timeoutMs = 60_000): Promise<string> {
+  request(
+    obj: Record<string, unknown>,
+    timeoutMs = 60_000,
+  ): Promise<Record<string, unknown>> {
+    if (this.dead) return Promise.reject(this.dead);
+    const id = this.nextId++;
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(
-        () => reject(new Error("brain timeout")),
-        timeoutMs,
-      );
-      this.pending.push((line) => {
-        clearTimeout(timer);
-        resolve(line);
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error("brain timeout"));
+      }, timeoutMs);
+      this.pending.set(id, {
+        resolve: (j) => {
+          clearTimeout(timer);
+          resolve(j);
+        },
+        reject: (e) => {
+          clearTimeout(timer);
+          reject(e);
+        },
       });
-      this.proc.stdin.write(JSON.stringify(obj) + "\n");
+      try {
+        this.proc.stdin.write(JSON.stringify({ id, ...obj }) + "\n");
+      } catch (e) {
+        this.pending.delete(id);
+        clearTimeout(timer);
+        reject(e as Error);
+      }
     });
   }
 }
@@ -141,34 +173,46 @@ export async function createBrain(): Promise<BrainIface> {
   if (haveAll) {
     try {
       const client = new Tier2Client(python, script);
+      let bootTimer: NodeJS.Timeout | undefined;
       const info = await Promise.race([
         client.ready,
-        new Promise<never>((_, rej) =>
-          setTimeout(() => rej(new Error("brain boot timeout")), 180_000),
-        ),
-      ]);
+        new Promise<never>((_, rej) => {
+          bootTimer = setTimeout(
+            () => rej(new Error("brain boot timeout")),
+            180_000,
+          );
+        }),
+      ]).finally(() => clearTimeout(bootTimer));
       // The active-regime network keeps DNp20 rates high and near-equal,
       // so the decode reads the DEVIATION of (R−L) from its own rolling
       // baseline — a declared adaptation that makes the readout respond
       // to chart transitions (v1 sensory mapping has no retinotopy yet;
       // that is the next brain checklist item).
-      let emaDiff: number | null = null;
+      const emaBySymbol = new Map<string, number>();
       return {
         tier: 2,
         label: `tier-2 connectome (${info.neurons.toLocaleString()} neurons, ${info.synapses.toLocaleString()} synapses)`,
-        async decide(symbol, history, price) {
-          const line = await client.request({
+        async decide(symbol, history, price, key) {
+          const j = (await client.request({
             symbol,
             prices: history.slice(-100),
             bid: price * 0.9985,
             ask: price * 1.0015,
             neural_ms: 500,
-          });
-          const j = JSON.parse(line);
+          })) as {
+            rateL: number;
+            rateR: number;
+            dnpe017_spikes: number;
+            frame_sha256?: string;
+            error?: string;
+          };
+          if (j.error) throw new Error(`brain: ${j.error}`);
           const raw = j.rateR - j.rateL;
-          if (emaDiff === null) emaDiff = raw;
-          const dev = raw - emaDiff;
-          emaDiff += 0.2 * (raw - emaDiff);
+          const k = (key ?? symbol).toLowerCase();
+          const prev = emaBySymbol.get(k);
+          const base = prev ?? raw;
+          const dev = raw - base;
+          emaBySymbol.set(k, base + 0.2 * (raw - base));
           const gate = j.dnpe017_spikes > 0;
           let proposal: Proposal = "HOLD";
           if (dev >= 2 && gate) proposal = "BUY";
@@ -187,6 +231,13 @@ export async function createBrain(): Promise<BrainIface> {
       console.error(
         `tier-2 boot failed (${(e as Error).message}) — falling back to tier-1 proxy`,
       );
+      try {
+        // never leak a multi-GB orphan kernel
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (globalThis as any).__lastBrainProc?.kill?.();
+      } catch {
+        /* already gone */
+      }
     }
   }
   return {

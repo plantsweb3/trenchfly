@@ -29,8 +29,8 @@ async function main() {
   const balance = await publicClient.getBalance({
     address: wallet.account.address,
   });
-  const gasPrice = await publicClient.getGasPrice();
-  const gasCost = gasPrice * 30_000n; // margin over the 21k transfer
+  const fees = await publicClient.estimateFeesPerGas();
+  const gasCost = (fees.maxFeePerGas ?? (await publicClient.getGasPrice())) * 42_000n; // 2x margin over the 21k transfer
   if (balance <= gasCost) {
     console.error(
       `Balance ${formatEther(balance)} ETH does not cover gas — nothing to sweep.`,

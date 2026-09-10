@@ -117,8 +117,8 @@ export default function Home() {
             {[
               {
                 k: "FLY WALLET",
-                status: "LIVE",
-                color: "var(--green)",
+                status: FLY_WALLET ? "LIVE" : "PENDING",
+                color: FLY_WALLET ? "var(--green)" : "var(--amber)",
                 body: "One public EVM wallet on chain 4663. Every order it ever signs is permanently visible.",
                 href: FLY_WALLET
                   ? `${ROBINHOOD_CHAIN.explorer}/address/${FLY_WALLET}`
@@ -334,8 +334,8 @@ export default function Home() {
           >
             A fly-connectome trading experiment pointed at the trenches.
             Connectome: MaleCNS v1.0, Janelia Research Campus — 166,700
-            neurons, 25.6M connections, released for science, repurposed for
-            this.
+            neurons, 25.1M compiled synapses, released for science, repurposed
+            for this.
           </p>
           <div className="mx-auto mt-8 max-w-md border border-line px-4 py-3">
             <div className="text-[10px] tracking-[0.25em] text-ink-dim">

@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { FLY_WALLET, ROBINHOOD_CHAIN } from "@/lib/chain";
 
-export const dynamic = "force-dynamic";
-
 interface OnchainTx {
   hash: string;
   method: string | null;
@@ -24,6 +22,7 @@ export async function GET() {
           Accept: "application/json",
         },
         next: { revalidate: 30 },
+        signal: AbortSignal.timeout(6000),
       },
     );
     if (!res.ok) return NextResponse.json({ txs: [] });

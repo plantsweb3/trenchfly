@@ -75,24 +75,50 @@ def main() -> None:
         flush=True,
     )
 
+    req_count = 0
     for line in sys.stdin:
         try:
             req = json.loads(line)
         except json.JSONDecodeError:
+            print(json.dumps({"id": -1, "error": "bad json"}), flush=True)
             continue
-        frame = market_frame(
+        rid = req.get("id", -1)
+        try:
+            frame = _handle(req, brain, ix_r16, ix_r78, watch)
+            frame["id"] = rid
+            print(json.dumps(frame), flush=True)
+        except Exception as e:  # noqa: BLE001 — one bad request must not kill the brain
+            print(json.dumps({"id": rid, "error": str(e)[:200]}), flush=True)
+            continue
+        req_count += 1
+        if req_count % 100 == 0:
+            _prune_frames()
+
+
+def _prune_frames(keep: int = 400) -> None:
+    try:
+        files = sorted(FRAMES.glob("*.png"), key=lambda f: f.stat().st_mtime)
+        for f in files[:-keep]:
+            f.unlink()
+    except OSError:
+        pass
+
+
+def _handle(req, brain, ix_r16, ix_r78, watch) -> dict:
+        prices = [float(x) for x in req.get("prices", []) if x is not None]
+        img = market_frame(
             str(req.get("symbol", "?"))[:10],
-            [float(x) for x in req.get("prices", [])],
-            float(req.get("bid", 0)),
-            float(req.get("ask", 0)),
+            prices,
+            float(req.get("bid") or 0),
+            float(req.get("ask") or 0),
         )
         buf = io.BytesIO()
-        Image.fromarray(frame).save(buf, format="PNG")
+        Image.fromarray(img).save(buf, format="PNG")
         raw = buf.getvalue()
         sha = hashlib.sha256(raw).hexdigest()
         (FRAMES / f"{sha}.png").write_bytes(raw)
 
-        d16, d78 = frame_to_drive(frame, len(ix_r16), len(ix_r78))
+        d16, d78 = frame_to_drive(img, len(ix_r16), len(ix_r78))
         brain.ext[:] = 0
         brain.ext[ix_r16] = d16
         brain.ext[ix_r78] = d78
@@ -117,7 +143,7 @@ def main() -> None:
                 )
                 + "\n"
             )
-        print(json.dumps(out), flush=True)
+        return out
 
 
 if __name__ == "__main__":

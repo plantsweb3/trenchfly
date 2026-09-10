@@ -2,7 +2,7 @@
 network in a sparse-firing awake state, so retinal transients propagate
 instead of dying in a silent (or seizing) graph.
 
-Bisection on background current, fixed noise, 200 ms probes. Target mean
+Bisection on background current, fixed noise, 150 ms probes. Target mean
 rate 0.5-3 Hz. Then a chart-transition probe: render two frames (price
 falling vs rising), drive the retina with each, report DNp20 L/R and
 DNpe017 activity. Writes calibration.json with everything measured.

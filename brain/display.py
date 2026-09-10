@@ -30,7 +30,7 @@ def market_frame(symbol: str, history: list[float], bid: float, ask: float) -> n
     vals = np.asarray(history[-100:], dtype=float)
     if len(vals) > 1:
         lo = float(vals.min())
-        span = max(float(vals.max()) - lo, lo * 0.002)
+        span = max(float(vals.max()) - lo, abs(lo) * 0.002, 1e-12)
         up = vals[-1] >= vals[0]
         color = (0, 200, 5) if up else (255, 80, 0)
         pts = [

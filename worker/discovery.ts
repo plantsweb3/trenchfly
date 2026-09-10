@@ -26,7 +26,7 @@ export interface Discovered {
 
 let lastBlock: bigint | null = null;
 
-export async function scanNewPools(max = 5): Promise<Discovered[]> {
+export async function scanNewPools(max = 6): Promise<Discovered[]> {
   const head = await publicClient.getBlockNumber();
   if (lastBlock === null) {
     lastBlock = head; // start watching from now
@@ -35,7 +35,6 @@ export async function scanNewPools(max = 5): Promise<Discovered[]> {
   if (head <= lastBlock) return [];
   const from = lastBlock + 1n;
   const to = head - from > 4999n ? from + 4999n : head; // RPC range safety
-  lastBlock = to;
 
   const logs = await publicClient.getLogs({
     address: CONTRACTS.uniswapV3Factory as Address,
@@ -43,6 +42,7 @@ export async function scanNewPools(max = 5): Promise<Discovered[]> {
     fromBlock: from,
     toBlock: to,
   });
+  lastBlock = to; // advance only after a successful fetch
 
   const weth = CONTRACTS.weth.toLowerCase();
   const out: Discovered[] = [];
@@ -67,7 +67,6 @@ export async function scanNewPools(max = 5): Promise<Discovered[]> {
       fee: Number(l.args.fee),
       block: String(l.blockNumber),
     });
-    if (out.length >= max) break;
   }
-  return out;
+  return out.slice(0, max);
 }
