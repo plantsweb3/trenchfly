@@ -246,6 +246,18 @@ async function main() {
   if (PREFLIGHT) return preflight();
   BRAIN = await createBrain();
   console.log(`brain: ${BRAIN.label}`);
+  // boot heartbeat so the site's REAL SESSION panel goes live immediately
+  maybePublish(
+    {
+      tier: BRAIN.tier,
+      brainLabel: BRAIN.label,
+      startedAt,
+      obs: 0,
+      watching: watchlist.filter((w) => w.address).map((w) => w.symbol),
+      recent: [],
+    },
+    true,
+  );
   console.log(
     `trenchfly worker — ${LIVE ? "LIVE ORDERS" : "paper"} — chain ${robinhoodChain.id} — guard ${GUARD.orderEth} ETH/order, no daily cap`,
   );
