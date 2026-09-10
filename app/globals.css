@@ -214,6 +214,40 @@ body::after {
   background: rgba(204, 245, 61, 0.04);
 }
 
+/* the fly's physical buttons */
+.trade-btn {
+  display: inline-block;
+  padding: 8px 18px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: var(--btn);
+  border: 1px solid var(--btn);
+  background: color-mix(in srgb, var(--btn) 10%, #050604);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--btn) 40%, #000);
+  transform: translateY(0);
+  transition: transform 0.08s ease, box-shadow 0.08s ease,
+    background 0.08s ease, color 0.08s ease;
+  user-select: none;
+  cursor: not-allowed;
+}
+.trade-btn.pressed {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 transparent, 0 0 18px color-mix(in srgb, var(--btn) 70%, transparent);
+  background: var(--btn);
+  color: #050604;
+}
+
+@keyframes flyJolt {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-1px, -3px) rotate(-1.2deg); }
+  55% { transform: translate(1px, 1px) rotate(0.8deg); }
+  80% { transform: translate(0, -1px) rotate(-0.4deg); }
+}
+.fly-jolt {
+  animation: flyJolt 0.5s ease;
+}
+
 .corner::before,
 .corner::after {
   content: "";

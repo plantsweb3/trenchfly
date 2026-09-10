@@ -59,7 +59,7 @@ const STEPS = [
 const RULES = [
   ["CAPITAL", "$100. Total. This is the whole fund."],
   ["ORDER LIMIT", "$10 per order, fees included. Conviction is capped by design."],
-  ["FREQUENCY", "24 order attempts per day. One per candle it actually watched."],
+  ["FREQUENCY", "No daily cap. The fly trades whenever the spikes say trade — order size is the leash, not the clock."],
   [
     "DRAWDOWN",
     "A $20 drawdown stops new orders. It does not liquidate holdings — the fly rides the bag down like everyone else.",

@@ -16,13 +16,28 @@ import {
 import NeuralActivity from "./NeuralActivity";
 import FlySvg from "./FlySvg";
 import WalletPanel from "./WalletPanel";
+import { useBuzz } from "./useBuzz";
+import { FLY_WALLET, ROBINHOOD_CHAIN } from "@/lib/chain";
 
 const OBS_MS = 1800;
+
+interface OnchainTx {
+  hash: string;
+  method: string | null;
+  timestamp: string | null;
+  success: boolean;
+  direction: "out" | "in";
+  valueEth: number;
+}
 
 export default function Terminal() {
   const [sim, setSim] = useState<SimState | null>(null);
   const rngRef = useRef<() => number>(() => 0.5);
   const seedRef = useRef(0);
+  const { buzz, enabled: buzzOn, toggle: toggleBuzz } = useBuzz();
+  const [pressed, setPressed] = useState<"BUY" | "SELL" | null>(null);
+  const lastTradeId = useRef(0);
+  const [onchain, setOnchain] = useState<OnchainTx[]>([]);
 
   useEffect(() => {
     const seed = (Date.now() ^ 0x5f3759df) >>> 0;
@@ -34,6 +49,37 @@ export default function Terminal() {
     }, OBS_MS);
     return () => clearInterval(id);
   }, []);
+
+  // real onchain feed for the fly wallet — rows link to Blockscout
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetch("/api/trades")
+        .then((r) => r.json())
+        .then((j) => alive && setOnchain(j.txs ?? []))
+        .catch(() => {});
+    load();
+    const id = setInterval(load, 30_000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
+
+  // fly presses the button + buzzes on every sim fill
+  useEffect(() => {
+    if (!sim) return;
+    const last = sim.trades[sim.trades.length - 1];
+    if (last && last.id > lastTradeId.current) {
+      lastTradeId.current = last.id;
+      if (!last.rejected) {
+        setPressed(last.side);
+        buzz(last.side);
+        const t = setTimeout(() => setPressed(null), 650);
+        return () => clearTimeout(t);
+      }
+    }
+  }, [sim, buzz]);
 
   if (!sim) {
     return (
@@ -64,7 +110,7 @@ export default function Terminal() {
           {(sim.spikesTotal / 1e6).toFixed(2)}M SPIKES
         </span>
         <span>
-          ORDERS {sim.dailyOrders}/24
+          ORDERS {sim.dailyOrders}
         </span>
         <span>CHAIN 4663</span>
         <span className="ml-auto hidden text-ink-faint sm:block">
@@ -83,8 +129,18 @@ export default function Terminal() {
               <span>/</span>
               <span>ROBINHOOD INPUT</span>
             </div>
-            <div className="bg-inset px-2 pt-2">
+            <div className={`bg-inset px-2 pt-2 ${pressed ? "fly-jolt" : ""}`}>
               <FlySvg phone className="block w-full" />
+            </div>
+            <div className="flex items-center gap-3 border-t border-line bg-inset px-3 py-3">
+              <TradeButton side="BUY" active={pressed === "BUY"} />
+              <TradeButton side="SELL" active={pressed === "SELL"} />
+              <button
+                onClick={toggleBuzz}
+                className="ml-auto border border-line px-2 py-1.5 text-[9px] tracking-[0.2em] text-ink-dim transition-colors hover:border-lime hover:text-lime"
+              >
+                BUZZ {buzzOn ? "ON" : "OFF"}
+              </button>
             </div>
             <div className="flex items-center justify-between border-t border-line px-3 py-2 text-[10px]">
               <span className="font-bold tracking-[0.2em] text-lime">
@@ -117,7 +173,7 @@ export default function Terminal() {
         </div>
 
         {/* ---- right column: trade log ---- */}
-        <TradeLog sim={sim} />
+        <TradeLog sim={sim} onchain={onchain} />
       </div>
     </section>
   );
@@ -543,7 +599,13 @@ function HoldingRow({ sim, ticker }: { sim: SimState; ticker: Ticker }) {
 
 /* ================= trade log ================= */
 
-function TradeLog({ sim }: { sim: SimState }) {
+function TradeLog({
+  sim,
+  onchain,
+}: {
+  sim: SimState;
+  onchain: OnchainTx[];
+}) {
   const rows = [...sim.trades].reverse();
   return (
     <div className="panel corner flex min-h-[420px] flex-col lg:max-h-[840px]">
@@ -554,6 +616,49 @@ function TradeLog({ sim }: { sim: SimState }) {
         <span className="ml-auto normal-case tracking-normal text-ink-faint">
           $10 max
         </span>
+      </div>
+      {onchain.length > 0 && (
+        <div className="border-b border-line">
+          <div className="px-3 pb-1 pt-2 text-[9px] tracking-[0.25em] text-green">
+            ONCHAIN · CLICK TO VERIFY
+          </div>
+          {onchain.slice(0, 8).map((tx) => (
+            <a
+              key={tx.hash}
+              href={`${ROBINHOOD_CHAIN.explorer}/tx/${tx.hash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="trade-row block px-3 py-2 text-[10px]"
+              style={{ borderLeftColor: "var(--green)" }}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className="border px-1.5 py-0.5 text-[8px] font-bold tracking-widest"
+                  style={{
+                    color: tx.success ? "var(--green)" : "var(--red)",
+                    borderColor: tx.success ? "var(--green)" : "var(--red)",
+                  }}
+                >
+                  TX
+                </span>
+                <span className="text-ink">
+                  {tx.method ?? (tx.direction === "in" ? "deposit" : "call")}
+                </span>
+                {tx.valueEth > 0 && (
+                  <span className="text-ink-dim">
+                    {tx.valueEth.toFixed(4)} ETH
+                  </span>
+                )}
+                <span className="ml-auto text-[9px] text-ink-faint">
+                  {tx.hash.slice(0, 10)}… ↗
+                </span>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+      <div className="border-b border-line px-3 py-1.5 text-[9px] tracking-[0.25em] text-ink-faint">
+        PAPER SIM · NOT ONCHAIN
       </div>
       <div className="flex-1 divide-y divide-line overflow-y-auto">
         {rows.length === 0 && (
@@ -568,9 +673,38 @@ function TradeLog({ sim }: { sim: SimState }) {
       </div>
       <div className="border-t border-line px-3 py-2 text-[9px] leading-snug text-ink-faint">
         Every order originates as motor-neuron spikes. The guard can reject an
-        order; it cannot invent a better one.
+        order; it cannot invent a better one.{" "}
+        {FLY_WALLET && (
+          <a
+            href={`${ROBINHOOD_CHAIN.explorer}/address/${FLY_WALLET}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lime underline decoration-lime/40 underline-offset-2 hover:decoration-lime"
+          >
+            Verify the wallet ↗
+          </a>
+        )}
       </div>
     </div>
+  );
+}
+
+function TradeButton({
+  side,
+  active,
+}: {
+  side: "BUY" | "SELL";
+  active: boolean;
+}) {
+  const color = side === "BUY" ? "var(--green)" : "var(--red)";
+  return (
+    <span
+      className={`trade-btn ${active ? "pressed" : ""}`}
+      style={{ "--btn": color } as React.CSSProperties}
+      title="Only the fly can press this."
+    >
+      {side}
+    </span>
   );
 }
 

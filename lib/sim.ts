@@ -87,7 +87,6 @@ function gauss(rng: () => number) {
 
 const CAPITAL = 100;
 const ORDER_LIMIT = 10;
-const DAILY_ORDERS = 24;
 const FEE = 0.006;
 const HISTORY = 100;
 
@@ -187,8 +186,7 @@ export function tick(s: SimState, rng: () => number): SimState {
 
   if (proposal !== "HOLD") {
     let rejected: string | null = null;
-    if (dailyOrders >= DAILY_ORDERS) rejected = "timing — 24 order daily cap";
-    else if (rng() < 0.07)
+    if (rng() < 0.07)
       rejected = "price — slippage 0.63% over 0.50% limit";
     else if (proposal === "BUY" && cash < 1.05)
       rejected = "budget — cash below minimum order";

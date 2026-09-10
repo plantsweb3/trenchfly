@@ -18,9 +18,8 @@ export const robinhoodChain = defineChain({
 // the ratios are what matter. The guard can reject a proposal for price,
 // budget, inventory or timing reasons. It cannot replace the proposal.
 export const GUARD = {
-  capitalEth: 0.025, // do not fund the wallet with more than this
-  orderEth: 0.0025, // max size per swap, gas + fees included
-  dailyOrders: 24,
+  capitalEth: 0.025, // reference trading capital (rewards can exceed this)
+  orderEth: 0.0025, // max size per swap, gas + fees included — the leash
   drawdownStopEth: 0.005, // stop NEW orders; does not liquidate holdings
   slippageBps: 50, // 0.50%
   minIntervalMs: 60_000,

@@ -38,7 +38,7 @@ npm run live        # real swaps. only after paper looks sane.
 ## Guard
 
 ETH-denominated port of the reference risk rules (`config.ts`): 0.0025 ETH max
-order, 24 orders/day, drawdown stop at 0.005 ETH (stops **new** orders —
+order, no daily cap, drawdown stop at 0.005 ETH (stops **new** orders —
 it does not liquidate holdings), 0.50% slippage limit. The guard can
 reject a proposal; it cannot replace it.
 

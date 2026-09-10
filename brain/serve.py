@@ -1,37 +1,53 @@
 """JSON-over-stdio decision server: the tier-2 adapter the TS worker calls.
 
 Protocol (one JSON object per line):
-  in:  {"frame_png_b64": "...", "neural_ms": 500}
-  out: {"rateL": float, "rateR": float, "dnpe017_spikes": int,
+  in:  {"symbol": "CASHCAT", "prices": [..], "bid": f, "ask": f,
+        "neural_ms": 500}
+  out: {"rateL": f, "rateR": f, "dnpe017_spikes": int,
         "total_spikes": int, "frame_sha256": "..."}
 
-Decode rule (fixed, engineered): mean right DNp20 rate minus left over
-the observation window; >= +2 Hz with a DNpe017 spike proposes buy,
-<= -2 Hz proposes sell. The proposal itself is computed by the worker
-from these numbers so the mapping lives in one audited place.
+The server renders the chart itself (display.py), drives the retina,
+advances the persistent brain state, and reads DNp20/DNpe017 spikes.
+Every observation is audit-logged: the exact frame PNG is saved under
+runs/frames/<sha>.png and a line is appended to runs/decisions.jsonl,
+so any order can be traced back to the pixels that caused it.
+
+Decode thresholds live in the worker so the mapping is audited in one
+place. Uses calibration.json (background drive + noise) from calibrate.py.
 """
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import io
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 from PIL import Image
 
+from display import market_frame
 from kernel import Brain
 from sensory import frame_to_drive
 
 HERE = Path(__file__).parent
+FRAMES = HERE / "runs" / "frames"
+DECISIONS = HERE / "runs" / "decisions.jsonl"
 
 
 def main() -> None:
+    FRAMES.mkdir(parents=True, exist_ok=True)
     pops = json.loads((HERE / "populations.json").read_text())["populations"]
-    brain = Brain()
+    cal = {}
+    cal_path = HERE / "calibration.json"
+    if cal_path.exists():
+        cal = json.loads(cal_path.read_text())
+    brain = Brain(
+        bg=float(cal.get("bg", 0.0)),
+        noise_sigma=float(cal.get("noise_sigma", 0.0)),
+    )
 
     def ids(name: str, side: str | None = None) -> list[int]:
         d = pops[name]["bodyIds"]
@@ -51,17 +67,31 @@ def main() -> None:
             {
                 "ready": True,
                 "neurons": brain.n,
-                "r16": len(ix_r16),
-                "r78": len(ix_r78),
+                "synapses": int(brain.W.nnz),
+                "bg": float(brain.bg),
+                "noise_sigma": float(brain.noise_sigma),
             }
         ),
         flush=True,
     )
 
     for line in sys.stdin:
-        req = json.loads(line)
-        raw = base64.b64decode(req["frame_png_b64"])
-        frame = np.asarray(Image.open(io.BytesIO(raw)).convert("RGB"))
+        try:
+            req = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        frame = market_frame(
+            str(req.get("symbol", "?"))[:10],
+            [float(x) for x in req.get("prices", [])],
+            float(req.get("bid", 0)),
+            float(req.get("ask", 0)),
+        )
+        buf = io.BytesIO()
+        Image.fromarray(frame).save(buf, format="PNG")
+        raw = buf.getvalue()
+        sha = hashlib.sha256(raw).hexdigest()
+        (FRAMES / f"{sha}.png").write_bytes(raw)
+
         d16, d78 = frame_to_drive(frame, len(ix_r16), len(ix_r78))
         brain.ext[:] = 0
         brain.ext[ix_r16] = d16
@@ -74,8 +104,19 @@ def main() -> None:
             "rateR": counts["dnp20_R"] / max(len(watch["dnp20_R"]), 1) / sec,
             "dnpe017_spikes": counts["dnpe017"],
             "total_spikes": counts["_total"],
-            "frame_sha256": hashlib.sha256(raw).hexdigest(),
+            "frame_sha256": sha,
         }
+        with open(DECISIONS, "a") as f:
+            f.write(
+                json.dumps(
+                    {
+                        "t": datetime.now(timezone.utc).isoformat(),
+                        "symbol": req.get("symbol"),
+                        **out,
+                    }
+                )
+                + "\n"
+            )
         print(json.dumps(out), flush=True)
 
 

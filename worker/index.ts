@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { formatEther, type Address } from "viem";
 import { GUARD, robinhoodChain } from "./config";
-import { decide } from "./brain";
+import { createBrain, type BrainIface } from "./brain";
 import {
   publicClient,
   quoteEth,
@@ -17,12 +17,15 @@ import {
   tokenDecimals,
 } from "./market";
 import { logRun, placeLive, walletFromEnv, type OrderIntent } from "./execute";
+import { scanNewPools } from "./discovery";
 
 const dir = dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: join(dir, ".env") });
 
 const LIVE = process.argv.includes("--live");
 const PREFLIGHT = process.argv.includes("--preflight");
+
+let BRAIN: BrainIface;
 
 interface WatchToken {
   symbol: string;
@@ -37,8 +40,7 @@ const watchlist: WatchToken[] = JSON.parse(
   readFileSync(join(dir, "watchlist.json"), "utf8"),
 ).tokens.map((t: Omit<WatchToken, "history">) => ({ ...t, history: [] }));
 
-let dailyOrders = 0;
-let dayStamp = new Date().toISOString().slice(0, 10);
+let ordersTotal = 0;
 let paperEth = GUARD.capitalEth;
 const paperHoldings = new Map<string, number>();
 
@@ -108,7 +110,7 @@ async function observe(t: WatchToken): Promise<void> {
   t.history = [...t.history.slice(-99), q.priceEth];
   if (t.history.length < 8) return; // let the chart warm up
 
-  const d = decide(t.history);
+  const d = await BRAIN.decide(t.symbol, t.history, q.priceEth);
   const px = q.priceEth;
   const line = `${t.symbol.padEnd(8)} ${px.toExponential(3)} ETH  L ${d.rateL.toFixed(1)} R ${d.rateR.toFixed(1)} Δ ${d.diff >= 0 ? "+" : ""}${d.diff.toFixed(2)}  ${d.proposal}`;
 
@@ -118,11 +120,6 @@ async function observe(t: WatchToken): Promise<void> {
   }
 
   // ---- guard ----
-  const today = new Date().toISOString().slice(0, 10);
-  if (today !== dayStamp) {
-    dayStamp = today;
-    dailyOrders = 0;
-  }
   const wallet = walletFromEnv();
   const tradingPnl =
     sellTotalEth +
@@ -138,8 +135,7 @@ async function observe(t: WatchToken): Promise<void> {
       : paperEth;
 
   let rejected: string | null = null;
-  if (dailyOrders >= GUARD.dailyOrders) rejected = "timing — daily cap";
-  else if (tradingPnl <= -GUARD.drawdownStopEth)
+  if (tradingPnl <= -GUARD.drawdownStopEth)
     rejected = "drawdown stop — trading P&L, deposits excluded";
   else if (d.proposal === "BUY" && cashEth < GUARD.orderEth * 1.2)
     rejected = "budget — cash below order size";
@@ -155,7 +151,7 @@ async function observe(t: WatchToken): Promise<void> {
 
   if (rejected) {
     console.log(`${line}  ✗ ${rejected}`);
-    logRun({ symbol: t.symbol, proposal: d.proposal, rejected });
+    logRun({ symbol: t.symbol, proposal: d.proposal, rejected, tier: BRAIN.tier, frameSha: d.frameSha });
     return;
   }
 
@@ -189,29 +185,59 @@ async function observe(t: WatchToken): Promise<void> {
       );
       paperEth += intent.amount * px;
     }
-    dailyOrders += 1;
+    ordersTotal += 1;
     console.log(`${line}  ✓ PAPER FILL`);
-    logRun({ mode: "paper", ...intent });
+    logRun({ mode: "paper", tier: BRAIN.tier, frameSha: d.frameSha, ...intent });
     return;
   }
 
   const hash = await placeLive(intent);
-  dailyOrders += 1;
+  ordersTotal += 1;
   console.log(`${line}  ✓ ${robinhoodChain.blockExplorers!.default.url}/tx/${hash}`);
-  logRun({ mode: "live", ...intent, hash });
+  logRun({ mode: "live", tier: BRAIN.tier, frameSha: d.frameSha, ...intent, hash });
 }
 
 async function main() {
   if (PREFLIGHT) return preflight();
+  BRAIN = await createBrain();
+  console.log(`brain: ${BRAIN.label}`);
   console.log(
-    `trenchfly worker — ${LIVE ? "LIVE ORDERS" : "paper"} — chain ${robinhoodChain.id} — guard ${GUARD.orderEth} ETH/order, ${GUARD.dailyOrders}/day`,
+    `trenchfly worker — ${LIVE ? "LIVE ORDERS" : "paper"} — chain ${robinhoodChain.id} — guard ${GUARD.orderEth} ETH/order, no daily cap`,
   );
   if (LIVE && !walletFromEnv()) {
     console.error("--live needs FLY_PRIVATE_KEY in worker/.env");
     process.exit(1);
   }
   let i = 0;
+  const MAX_WATCH = 14;
   for (;;) {
+    // discovery pass once per full rotation: new WETH-paired pools join
+    // the rotation; oldest discovered pairs rotate out past MAX_WATCH.
+    if (i % Math.max(watchlist.length, 1) === 0) {
+      try {
+        const found = await scanNewPools();
+        for (const f of found) {
+          if (watchlist.some((t) => t.address.toLowerCase() === f.address.toLowerCase()))
+            continue;
+          watchlist.push({
+            symbol: f.symbol,
+            venue: "new pair",
+            address: f.address,
+            history: [],
+          });
+          console.log(`🪰 new pair discovered: ${f.symbol} (${f.address})`);
+          logRun({ discovered: f });
+        }
+        while (watchlist.length > MAX_WATCH) {
+          const idx = watchlist.findIndex((t) => t.venue === "new pair");
+          if (idx === -1) break;
+          const [gone] = watchlist.splice(idx, 1);
+          console.log(`rotated out: ${gone.symbol}`);
+        }
+      } catch (e) {
+        console.error(`discovery: ${(e as Error).message}`);
+      }
+    }
     const t = watchlist[i % watchlist.length];
     i += 1;
     try {

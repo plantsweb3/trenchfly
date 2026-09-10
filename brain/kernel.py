@@ -27,7 +27,13 @@ R_IN = 1.0  # lumped input resistance (mV per unit current)
 
 
 class Brain:
-    def __init__(self, graph_path: Path | None = None):
+    def __init__(
+        self,
+        graph_path: Path | None = None,
+        bg: float = 0.0,
+        noise_sigma: float = 0.0,
+        seed: int = 0,
+    ):
         z = np.load(graph_path or HERE / "graph.npz")
         n = int(z["shape"][0])
         self.n = n
@@ -41,6 +47,11 @@ class Brain:
         self.refrac = np.zeros(n, dtype=np.float32)
         self.ext = np.zeros(n, dtype=np.float32)
         self.spike_counts = np.zeros(n, dtype=np.int64)
+        # tonic background drive + per-step noise: the declared "awake
+        # network" adapter that lets retinal transients propagate.
+        self.bg = np.float32(bg)
+        self.noise_sigma = np.float32(noise_sigma)
+        self.rng = np.random.default_rng(seed)
 
     def idx(self, body_ids: list[int]) -> np.ndarray:
         return np.array(
@@ -54,9 +65,12 @@ class Brain:
     def step(self) -> np.ndarray:
         """Advance one 0.1 ms step; returns bool spike vector."""
         self.syn *= 1.0 - DT_MS / TAU_S
-        dv = (
-            (V_REST - self.v) + R_IN * (self.syn + self.ext)
-        ) * (DT_MS / TAU_M)
+        drive = self.syn + self.ext + self.bg
+        if self.noise_sigma > 0:
+            drive = drive + self.rng.normal(
+                0.0, self.noise_sigma, self.n
+            ).astype(np.float32)
+        dv = ((V_REST - self.v) + R_IN * drive) * (DT_MS / TAU_M)
         active = self.refrac <= 0
         self.v[active] += dv[active]
         self.refrac[~active] -= DT_MS
