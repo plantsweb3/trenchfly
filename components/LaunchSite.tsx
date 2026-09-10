@@ -1,4 +1,5 @@
 "use client";
+import MarketRadar from "./MarketRadar";
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
@@ -81,8 +82,8 @@ function ChartFrame({ decision }: { decision?: SessionDecision }) {
       <p>{failed ? "The decision is recorded below. Check the public feed for its source image." : "The chart the fly saw will appear here when the worker publishes it."}</p>
     </div>
   );
-  return <a className={s.frameImageLink} href={`${REPO}/blob/feed/frames/${decision.frameSha}.png`} target="_blank" rel="noopener noreferrer" aria-label={`Open source frame for ${decision.symbol}, ${utcTime(decision.t)} UTC`}>
-    <Image unoptimized src={`https://raw.githubusercontent.com/plantsweb3/trenchfly/feed/frames/${decision.frameSha}.png`} alt={`Published chart frame used for the ${decision.symbol} ${decision.proposal.toLowerCase()} proposal at ${utcTime(decision.t)} UTC`} width={640} height={360} className={s.frameImage} onError={() => setFailed(true)} />
+  return <a className={s.frameImageLink} href={`/api/frames/${decision.frameSha}`} target="_blank" rel="noopener noreferrer" aria-label={`Open source frame for ${decision.symbol}, ${utcTime(decision.t)} UTC`}>
+    <Image unoptimized src={`/api/frames/${decision.frameSha}`} alt={`Published chart frame used for the ${decision.symbol} ${decision.proposal.toLowerCase()} proposal at ${utcTime(decision.t)} UTC`} width={640} height={360} className={s.frameImage} onError={() => setFailed(true)} />
     <span className={s.frameOverlay}>Open source frame <Arrow diagonal /></span>
   </a>;
 }
@@ -130,17 +131,21 @@ function SessionPanel({ resource, now }: { resource: Resource<PublicSession> & {
             <div className={s.inspectorLabel}>{selected ? <button onClick={() => setSelectedKey(null)}>Back to latest observation</button> : <span className={s.eyebrow}>PUBLISHED EVIDENCE</span>}{latest && receiptHash(latest.result) && <External href={`${EXPLORER}/tx/${receiptHash(latest.result)}`} className={s.textLink}>Receipt</External>}</div>
             <dl className={s.neuralReadout}>
               <div><dt>Baseline deviation</dt><dd>{latest?.dev !== null && latest?.dev !== undefined ? `${latest.dev >= 0 ? "+" : ""}${latest.dev.toFixed(2)} Hz` : "—"}</dd></div>
+              <div><dt>Inference time</dt><dd>{latest?.inferenceMs ? `${(latest.inferenceMs/1000).toFixed(1)}s` : "—"}</dd></div>
               <div><dt>Run observations</dt><dd>{feed?.obs?.toLocaleString("en-US") ?? "—"}</dd></div>
             </dl>
           </div>
         </TradingTheater>
+        {latest?.input?.discoveryTx && <div className={s.evidenceChain}><span>FOLLOW THIS DECISION</span><External href={`${EXPLORER}/tx/${latest.input.discoveryTx}`}>Pool created ↗</External><span>→</span><a href={`/api/frames/${latest.frameSha}`} target="_blank" rel="noopener noreferrer">Exact chart ↗</a><span>→</span><span>Measured spikes</span><span>→</span><strong>{resultLabel(latest.result)}</strong></div>}
+        <MarketRadar feed={feed} now={now} />
         <div className={s.logHeader}><h3>Decision log</h3><div className={s.logFilters} role="group" aria-label="Filter decision log">{(["all", "fills", "rejected"] as const).map(value => <button key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{value === "all" ? "All" : value === "fills" ? "Fills" : "Rejected"}</button>)}</div><span className={s.smallMono}>UTC / SELECT AN ASSET TO INSPECT</span></div>
         <div className={s.logWrap}>
           {decisions.length ? <table className={s.logTable}><caption className={s.srOnly}>Recent worker proposals and reported outcomes. A proposal is not a confirmed trade.</caption><thead><tr><th scope="col">Time</th><th scope="col">Asset</th><th scope="col">Proposal</th><th scope="col">Outcome</th></tr></thead><tbody>{decisions.map((d, i) => <tr key={`${d.t}-${d.symbol}-${i}`} className={selected && decisionKey(d) === decisionKey(selected) ? s.selectedRow : undefined}><td><time dateTime={d.t} title={d.t}>{utcTime(d.t)}</time></td><td><button className={s.inspectButton} aria-pressed={!!selected && decisionKey(d) === decisionKey(selected)} aria-label={`Inspect ${d.symbol} ${d.proposal.toLowerCase()} at ${utcTime(d.t)} UTC`} onClick={() => setSelectedKey(decisionKey(d))}>{d.symbol}</button><time dateTime={d.t} className={s.mobileTime}>{utcTime(d.t).slice(0, 5)}</time></td><td className={d.proposal === "BUY" ? s.buy : d.proposal === "SELL" ? s.sell : s.hold}>{d.proposal}</td><td title={d.result}>{receiptHash(d.result) ? <External href={`${EXPLORER}/tx/${receiptHash(d.result)}`} className={s.receiptLink}>View receipt</External> : resultLabel(d.result)}</td></tr>)}</tbody></table> : <div className={s.logEmpty}><span className={s.emptyIndex}>00</span><div><strong>{resource.status === "loading" ? "Loading the public record" : filter === "all" ? "No decisions available yet" : "No matching decisions in this snapshot"}</strong><p>{resource.status === "loading" ? "Connecting to the worker’s published feed." : "Check back here or open the source feed. Published decisions will appear automatically."}</p></div><External href={FEED} className={s.textLink}>Source feed</External></div>}
         </div>
         <div className={s.consoleFooter}><div><Badge tone={execution.tone}>{execution.label}</Badge><p>{execution.detail}</p></div><External href={HISTORY} className={s.textLink}>Feed history</External></div>
       </div>
-      <div className={s.consoleNote}><span>Public feed checked every 30 seconds. Worker publishing is periodic; this is not a tick-by-tick stream.</span><External href={FEED} className={s.textLink}>Raw data</External></div>
+      <p className={s.scienceNote}>Research status: chart pixels influence the model, but understanding price direction and profitability are unproven. <a href="/research/vision-audit.json" target="_blank" rel="noopener noreferrer">Inspect the 35-observation controlled test ↗</a></p>
+      <div className={s.consoleNote}><span>Public feed checked every 30 seconds. Archived delivery can lag by several minutes; timestamps show the age of each observation.</span><External href={FEED} className={s.textLink}>Raw data</External></div>
     </section>
   );
 }

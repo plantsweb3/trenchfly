@@ -459,3 +459,7 @@
 .deskInspector { padding: 16px 23px 22px; }
 .deskInspector .neuralReadout { margin-top: 12px; }
 .deskInspector .inspectorLabel { flex-wrap: wrap; gap: 9px; }
+
+.evidenceChain{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px 28px;border-top:1px solid #273225;color:#95a888;font:10px var(--font-mono),monospace;line-height:1.7}.evidenceChain>a{color:#d7ff3f}.evidenceChain>strong{color:#e5eddd;font-weight:400}.evidenceChain>span:first-child{font-size:9px;letter-spacing:.12em;margin-right:8px}
+
+.scienceNote{color:#a6b69b;font-size:11px;line-height:1.7;max-width:900px;margin:20px 0 0}.scienceNote a{color:#d7ff3f;text-underline-offset:3px}

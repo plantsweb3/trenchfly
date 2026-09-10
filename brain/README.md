@@ -68,3 +68,13 @@ counts is a coarse model — signs from predicted neurotransmitters, no
 receptor kinetics, no gap junctions, engineered sensory injection. The
 claim is "the real connectome's wiring runs every decision," not "a
 simulated living fly."
+
+## Controlled visual audit (2026-09-10)
+
+Run `.venv/bin/python vision_audit.py` offline. It restores membrane voltage, synaptic state, refractory timers, external drive, spike counters, held noise, step index and the exact RNG state before each counterfactual. Five independent seeds each receive 200 ms of common settling and seven 500-ms visual conditions: rising, exact repeat, reversed, flat, shuffled, ticker-only and blank.
+
+An initial audit found a ticker-label confound. The current display therefore uses a constant header and leaves token identity outside the brain image. The deployed 35-observation audit reproduced identical inputs exactly and made the ticker-only control identical. Reversed-minus-rising motor differences were `[4, -6, -6, 6, 6]` Hz: the image affects the model, but the sign is not consistent across seeds. There is no demonstrated chart understanding or profitable strategy. The per-token rolling-baseline decoder needs separate sequence-level validation.
+
+The display no longer fabricates bid/ask prices or colors the whole trace according to an external price-direction rule. It renders sourced candles when available, otherwise a clearly labeled quote trace. The server reports genuine population counts and ten 50-ms bins for each 500-ms observation. The public wiring/facet animation is still illustrative, not a measured spatial connectome movie.
+
+Anatomically grounded retinotopy, physiological calibration, learned candidate attention and dopamine learning remain research work. This release does not check off those items.

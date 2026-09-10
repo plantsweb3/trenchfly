@@ -1,6 +1,10 @@
 /** Validate public telemetry before it becomes a status claim or an external link. */
 export type Proposal = "BUY" | "SELL" | "HOLD" | "UNKNOWN";
+export interface NeuralTrace { neuralMs: number; totalSpikes: number; bins: {tMs:number;rateL:number;rateR:number;gateSpikes:number;totalSpikes:number}[]; populations: {name:string;neurons:number;spikes:number;rateHz:number}[]; mapping:string }
+export interface MarketContext { pool:string|null; discoveryTx:string|null; createdAt:number|null; volumeEth5m:number|null; buys5m:number|null; sells5m:number|null; poolWeth:number|null; statsAt:number|null; scanThroughAt:number|null; source:string; coverageCurrent:boolean }
+export interface DiscoveryStatus { enabled:boolean; scope:string; cursor:string|null; head:string|null; queued:number|null; active:number|null; lastIngestionAt:string|null; error:string|null; selection:string }
 export interface SessionDecision {
+  neural?: NeuralTrace | null; inferenceMs?:number|null; signalAgeMs?:number|null; input?:MarketContext|null; pool?:string|null;
   t: string;
   symbol: string;
   proposal: Proposal;
@@ -15,7 +19,7 @@ export interface SessionDecision {
   priceEth: number | null;
   quoteAt: string | null;
 }
-export interface SessionMarket { symbol: string; address: string; status: "checking" | "warming" | "ready" | "no_quote" | "error"; samples: number; lastQuoteAt: string | null; priceEth: number | null }
+export interface SessionMarket { pool?:string|null; context?:MarketContext|null; symbol: string; address: string; status: "checking" | "warming" | "ready" | "no_quote" | "error"; samples: number; lastQuoteAt: string | null; priceEth: number | null }
 export interface PublicSession {
   updatedAt: string;
   tier: 1 | 2 | null;
@@ -30,6 +34,8 @@ export interface PublicSession {
   lastError: string | null;
   markets: SessionMarket[];
   gasIncluded: boolean | null;
+  discovery?:DiscoveryStatus|null;
+  transport?:string;
 }
 export interface PublicWallet { address: string | null; balanceEth: number | null }
 export interface PublicTransaction {
@@ -49,6 +55,18 @@ const date = (v: unknown) => typeof v === "string" && Number.isFinite(Date.parse
 export const isAddress = (v: unknown): v is string => typeof v === "string" && /^0x[\da-f]{40}$/i.test(v);
 export const isTxHash = (v: unknown): v is string => typeof v === "string" && /^0x[\da-f]{64}$/i.test(v);
 
+const positive = (v:unknown) => {const n=finite(v);return n!==null&&n>=0?n:null;};
+function marketContext(v:unknown):MarketContext|null {
+  const c=record(v);if(!c)return null;
+  return {pool:isAddress(c.pool)?c.pool:null,discoveryTx:isTxHash(c.discoveryTx)?c.discoveryTx:null,createdAt:positive(c.createdAt),volumeEth5m:positive(c.volumeEth5m),buys5m:positive(c.buys5m),sells5m:positive(c.sells5m),poolWeth:positive(c.poolWeth),statsAt:positive(c.statsAt),scanThroughAt:positive(c.scanThroughAt),source:string(c.source,40),coverageCurrent:c.coverageCurrent===true};
+}
+function neuralTrace(v:unknown):NeuralTrace|null {
+  const n=record(v);if(!n||!Array.isArray(n.bins)||!Array.isArray(n.populations)||positive(n.neuralMs)===null||positive(n.totalSpikes)===null)return null;
+  const bins=n.bins.slice(0,20).flatMap(value=>{const b=record(value);if(!b||[b.tMs,b.rateL,b.rateR,b.gateSpikes,b.totalSpikes].some(x=>positive(x)===null))return [];return [{tMs:b.tMs as number,rateL:b.rateL as number,rateR:b.rateR as number,gateSpikes:b.gateSpikes as number,totalSpikes:b.totalSpikes as number}];});
+  if(!bins.length)return null;
+  const populations=n.populations.slice(0,10).flatMap(value=>{const p=record(value);if(!p||[p.neurons,p.spikes,p.rateHz].some(x=>positive(x)===null))return [];return [{name:string(p.name,24),neurons:p.neurons as number,spikes:p.spikes as number,rateHz:p.rateHz as number}];});
+  return {neuralMs:n.neuralMs as number,totalSpikes:n.totalSpikes as number,bins,populations,mapping:string(n.mapping,80)};
+}
 export function normalizeSession(payload: unknown): PublicSession | null {
   const s = record(record(payload)?.session);
   const updatedAt = date(s?.updatedAt);
@@ -60,6 +78,7 @@ export function normalizeSession(payload: unknown): PublicSession | null {
     if (!d || !t) continue;
     const proposal = string(d.proposal).toUpperCase();
     recent.push({
+      neural:neuralTrace(d.neural),inferenceMs:positive(d.inferenceMs),signalAgeMs:positive(d.signalAgeMs),input:marketContext(d.input),pool:isAddress(d.pool)?d.pool:null,
       t, symbol: string(d.symbol, 24) || "Unreported",
       proposal: ["BUY", "SELL", "HOLD"].includes(proposal) ? proposal as Proposal : "UNKNOWN",
       rateL: finite(d.rateL), rateR: finite(d.rateR), dev: finite(d.dev),
@@ -76,10 +95,11 @@ export function normalizeSession(payload: unknown): PublicSession | null {
     const market = record(value);
     if (!market || !isAddress(market.address)) continue;
     const state = string(market.status);
-    markets.push({ symbol: string(market.symbol, 24) || "Unreported", address: market.address, status: ["checking", "warming", "ready", "no_quote", "error"].includes(state) ? state as SessionMarket["status"] : "error", samples: Math.max(0, Math.floor(finite(market.samples) ?? 0)), lastQuoteAt: date(market.lastQuoteAt), priceEth: finite(market.priceEth) });
+    markets.push({ pool:isAddress(market.pool)?market.pool:null,context:marketContext(market.context), symbol: string(market.symbol, 24) || "Unreported", address: market.address, status: ["checking", "warming", "ready", "no_quote", "error"].includes(state) ? state as SessionMarket["status"] : "error", samples: Math.max(0, Math.floor(finite(market.samples) ?? 0)), lastQuoteAt: date(market.lastQuoteAt), priceEth: finite(market.priceEth) });
   }
   const status = string(s.status);
   const accounting = record(s.accounting);
+  const discovery=record(s.discovery);
   return {
     updatedAt, tier: s.tier === 1 || s.tier === 2 ? s.tier : null,
     brainLabel: string(s.brainLabel, 80), obs: obs !== null && obs >= 0 ? Math.floor(obs) : null,
@@ -87,6 +107,7 @@ export function normalizeSession(payload: unknown): PublicSession | null {
     recent, mode: s.mode === "paper" || s.mode === "live" ? s.mode : null,
     status: ["starting", "warming", "running", "degraded", "stopped"].includes(status) ? status as PublicSession["status"] : null,
     runId: string(s.runId, 80) || null, lastObservationAt: date(s.lastObservationAt), lastError: string(s.lastError, 240) || null,
+    discovery:discovery?{enabled:discovery.enabled===true,scope:string(discovery.scope,100),cursor:typeof discovery.cursor==="string"&&/^\d+$/.test(discovery.cursor)?discovery.cursor:null,head:typeof discovery.head==="string"&&/^\d+$/.test(discovery.head)?discovery.head:null,queued:positive(discovery.queued),active:positive(discovery.active),lastIngestionAt:date(discovery.lastIngestionAt),error:string(discovery.error,240)||null,selection:string(discovery.selection,160)}:null,transport:string(record(payload)?.transport,40),
     markets, gasIncluded: typeof accounting?.gasIncluded === "boolean" ? accounting.gasIncluded : null,
   };
 }

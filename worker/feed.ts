@@ -14,17 +14,21 @@ const INTERVAL = 60_000;
 export interface FeedDecision {
   t: string; symbol: string; proposal: string; rateL: number; rateR: number;
   dev: number; gate: boolean; frameSha?: string; result: string;
+  input?: Record<string,unknown>; pool?:string; neural?:import("./brain").NeuralSummary; inferenceMs?:number; signalAgeMs?:number;
   token?: string; priceEth?: number; quoteAt?: string; id?: string;
 }
 export type WorkerStatus = "starting" | "warming" | "running" | "degraded" | "stopped";
 export interface FeedMarket {
   symbol: string; address: string; status: "checking" | "warming" | "ready" | "no_quote" | "error";
+  pool?:string|null; context?:Record<string,unknown>|null;
   samples: number; lastQuoteAt: string | null; priceEth: number | null;
 }
 export interface FeedPayload {
   schemaVersion: 2; mode: Mode; runId: string; status: WorkerStatus;
   tier: 1 | 2 | null; brainLabel: string; startedAt: string; obs: number;
   watching: string[]; recent: FeedDecision[]; lastObservationAt: string | null;
+  rpcUsage?:{month:string;estimatedCu:number;monthlyCeiling:number;estimateOnly:boolean};
+  discovery?: {enabled:boolean;scope:string;confirmationBlocks:number;cursor:string|null;head:string|null;queued:number;active:number;lastIngestionAt:string|null;error:string|null;selection:string};
   markets: FeedMarket[]; lastError: string | null;
   accounting: { kind: "quote_based_paper" | "live_ledger"; gasIncluded: boolean; orders: number };
 }

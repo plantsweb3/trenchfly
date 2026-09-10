@@ -8,3 +8,5 @@ worker/
 *.blend1
 *.pem
 *.key
+
+deploy/

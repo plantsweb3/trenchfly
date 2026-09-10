@@ -1,0 +1,16 @@
+[Unit]
+Description=RobinFly paper observation worker
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/robinfly/deploy
+ExecStart=/usr/bin/docker compose up --no-build --abort-on-container-exit --exit-code-from paper-worker
+ExecStop=/usr/bin/docker compose stop -t 45
+Restart=no
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

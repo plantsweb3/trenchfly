@@ -122,7 +122,7 @@ export default function TradingDesk({ className, frameSha, reaction, reactionKey
           const version = ++textureVersion;
           statusScreen(sha ? "LOADING RECORDED CHART" : "AWAITING CHART INPUT");
           if (!sha || !/^[a-f\d]{64}$/i.test(sha)) return;
-          void new THREE.TextureLoader().loadAsync(`https://raw.githubusercontent.com/plantsweb3/trenchfly/feed/frames/${sha}.png`).then(next => {
+          void new THREE.TextureLoader().loadAsync(`/api/frames/${sha}`).then(next => {
             if (disposed || version !== textureVersion) { next.dispose(); return; }
             texture(next);
           }).catch(() => { if (!disposed && version === textureVersion) statusScreen("SOURCE FRAME UNAVAILABLE"); });

@@ -22,6 +22,7 @@ import hashlib
 import io
 import json
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -61,6 +62,9 @@ def main() -> None:
         "dnp20_L": brain.idx(ids("DNp20", "L")),
         "dnp20_R": brain.idx(ids("DNp20", "R")),
         "dnpe017": brain.idx(ids("DNpe017")),
+        "R1_R6": ix_r16,
+        "R7_R8": ix_r78,
+        "KC": brain.idx(ids("KC")),
     }
     print(
         json.dumps(
@@ -109,8 +113,7 @@ def _handle(req, brain, ix_r16, ix_r78, watch) -> dict:
         img = market_frame(
             str(req.get("symbol", "?"))[:10],
             prices,
-            float(req.get("bid") or 0),
-            float(req.get("ask") or 0),
+            context=req.get("context") if isinstance(req.get("context"), dict) else None,
         )
         buf = io.BytesIO()
         Image.fromarray(img).save(buf, format="PNG")
@@ -123,7 +126,19 @@ def _handle(req, brain, ix_r16, ix_r78, watch) -> dict:
         brain.ext[ix_r16] = d16
         brain.ext[ix_r78] = d78
         ms = float(req.get("neural_ms", 500))
-        counts = brain.run_ms(ms, watch)
+        if not np.isfinite(ms) or ms < 50 or ms > 1000 or ms % 50:
+            raise ValueError("neural_ms must be a multiple of 50 between 50 and 1000")
+        started = time.perf_counter()
+        counts = {k: 0 for k in watch}
+        counts["_total"] = 0
+        bins = []
+        for i in range(int(ms / 50)):
+            chunk = brain.run_ms(50, watch)
+            for k in counts:
+                counts[k] += chunk[k]
+            bins.append({"tMs": (i+1)*50, "rateL": chunk["dnp20_L"]/max(len(watch["dnp20_L"]),1)/.05,
+                         "rateR": chunk["dnp20_R"]/max(len(watch["dnp20_R"]),1)/.05,
+                         "gateSpikes": chunk["dnpe017"], "totalSpikes": chunk["_total"]})
         sec = ms / 1000.0
         out = {
             "rateL": counts["dnp20_L"] / max(len(watch["dnp20_L"]), 1) / sec,
@@ -131,6 +146,11 @@ def _handle(req, brain, ix_r16, ix_r78, watch) -> dict:
             "dnpe017_spikes": counts["dnpe017"],
             "total_spikes": counts["_total"],
             "frame_sha256": sha,
+            "neural": {"neuralMs": ms, "totalSpikes": counts["_total"], "bins": bins,
+                       "populations": [{"name": name, "neurons": len(indices), "spikes": counts[name],
+                                        "rateHz": counts[name]/max(len(indices),1)/sec} for name,indices in watch.items()],
+                       "mapping": "engineered_flattened_pixels_v1"},
+            "inference_ms": round((time.perf_counter()-started)*1000),
         }
         with open(DECISIONS, "a") as f:
             f.write(
@@ -138,6 +158,7 @@ def _handle(req, brain, ix_r16, ix_r78, watch) -> dict:
                     {
                         "t": datetime.now(timezone.utc).isoformat(),
                         "symbol": req.get("symbol"),
+                        "input": {"prices": prices, "context": req.get("context"), "neural_ms": ms},
                         **out,
                     }
                 )

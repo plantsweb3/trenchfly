@@ -1,0 +1,16 @@
+{
+  "observations": 35,
+  "independentSeeds": 5,
+  "identicalRepeats": true,
+  "labelControlIdentical": true,
+  "reversedMinusRisingHz": [
+    4.0,
+    -6.0,
+    -6.0,
+    6.0,
+    6.0
+  ],
+  "chartUnderstandingValidated": false,
+  "profitabilityValidated": false,
+  "limitation": "Pixels influence the simulated network. Directional responses are not consistent across seeds. Spatial input mapping and physiological parameters are engineered and not anatomically validated."
+}

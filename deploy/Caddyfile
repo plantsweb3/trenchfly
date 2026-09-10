@@ -1,0 +1,11 @@
+# Set FEED_DOMAIN to a DNS name pointing at the owned worker host.
+{$FEED_DOMAIN} {
+    encode zstd gzip
+    @public path /health /latest.json /frames/*.png
+    handle @public {
+        reverse_proxy 127.0.0.1:8787
+    }
+    handle {
+        respond 404
+    }
+}

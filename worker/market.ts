@@ -11,14 +11,24 @@ import {
   parseUnits,
   formatEther,
   type Address,
+  type Transport,
 } from "viem";
+import {dirname,join} from "node:path";
+import {fileURLToPath} from "node:url";
+import {RpcBudget} from "./rpc-budget";
 import { CONTRACTS, FEE_TIERS, robinhoodChain } from "./config";
 import { rpcUrl } from "./rpc";
 import { isUnavailableRoute } from "../lib/rpc-config";
 
+export const rpcBudget=new RpcBudget(join(dirname(fileURLToPath(import.meta.url)),"runs"));
+const baseTransport=http(rpcUrl(), {timeout:12_000,retryCount:0});
+const pacedTransport:Transport = options=>{
+  const connection=baseTransport(options);
+  return {...connection,request:async args=>{await rpcBudget.take(args.method);return connection.request(args);}};
+};
 export const publicClient = createPublicClient({
   chain: robinhoodChain,
-  transport: http(rpcUrl(), { timeout: 12_000, retryCount: 0 }),
+  transport: pacedTransport,
 });
 
 const quoterAbi = parseAbi([
@@ -77,10 +87,11 @@ async function quoteSingle(
 export async function quoteEth(
   token: Address,
   decimals: number,
+  preferredFee?: number,
 ): Promise<{ priceEth: number; fee: number } | null> {
   const amountIn = parseUnits("1", decimals);
   let best: { out: bigint; fee: number } | null = null;
-  for (const fee of FEE_TIERS) {
+  for (const fee of preferredFee === undefined ? FEE_TIERS : [preferredFee]) {
     const out = await quoteSingle(
       token,
       CONTRACTS.weth as Address,

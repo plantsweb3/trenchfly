@@ -38,3 +38,18 @@ The implementation includes chain-ID checks, actual-order quotes, swap simulatio
 No launch check has established a complete live buy → sell → gas/recovery cycle. Review and test that path independently before any owner-operated activation. A private production RPC, a durable always-on host, complete route coverage and operational recovery remain launch requirements. The website host is not the brain-worker host.
 
 The limits in `config.ts` are experimental controls, not guarantees. Dopamine learning and profitable behavior are not demonstrated.
+
+## Fresh-pair pipeline (2026-09-10)
+
+Discovery now runs by default (`--no-discovery` disables it). Scope is the declared canonical Uniswap v3 factory and WETH pairs on chain 4663. It does not claim every launchpad, bonding curve, quote currency, or pre-migration token.
+
+- `runs/markets.json` atomically persists the contiguous discovery cursor, block hash, every event and each pool's quote/swap history. Overflow remains queued. Source changes, corrupt state and reorgs at saved anchors stop the worker for reconciliation.
+- Software rotates a maximum of 14 candidate tokens through three-minute windows, preserving held positions even beyond that cap. Older unheld candidates leave the active window; stored creation records remain. This is software attention, not a learned brain choice.
+- Discovery, quote ingestion, shared pool-swap ingestion and neural observations run independently. The observer copies an immutable frame input; a 45-second freshness rule is checked after inference and again before execution.
+- Actual Swap logs produce one-minute OHLC candles, five-minute buys/sells and WETH volume. Empty intervals are not invented. Pool token balances and active-liquidity units are sourced contract reads, not proof of locked liquidity or sellability. Holders and security scanners remain unavailable.
+- Existing configured pools use `getPool` and are explicitly distinguished from `PoolCreated` discoveries. Their creation age remains unknown unless the event is found.
+- Every new connectome decision includes the exact frame hash, input context, population spike totals, ten 50-ms motor-rate bins, and inference/signal age. The decorative neural mesh remains schematic.
+- Transaction hashes and receipt stages are journaled before waiting. `npm run reconcile` is read-only and never clears an unresolved intent. Entry/exit lifecycle failures are covered by offline injected-I/O tests; that does not establish mainnet sellability.
+- A read-only local telemetry server listens on `127.0.0.1:8787`. `/health` and `/latest.json` expose only public telemetry. See `../deploy/README.md` for an HTTPS origin and persistent paper hosting.
+
+The current Alchemy app was connected and verified as chain 4663. Its free plan required 10-block log ranges. The worker paces estimated compute units and stops at a local 24M monthly estimate. This is not account-wide billing enforcement; continuous polling may consume the free allowance in days. Inspect the provider dashboard. No paid plan or host has been provisioned by this change.

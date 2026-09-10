@@ -1,4 +1,5 @@
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { closeSync, fsyncSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import type { TransactionEvent } from "./execution-engine";
 import { join } from "node:path";
 
 export type Mode = "paper" | "live";
@@ -14,7 +15,7 @@ export interface Ledger {
   gasEth: number;
   ordersTotal: number;
   lastOrderAt: number;
-  pending: { id: string; token: string; side: "BUY" | "SELL"; createdAt: string; hash?: string } | null;
+  pending: { id: string; token: string; side: "BUY" | "SELL"; createdAt: string; hash?: string; transactions?: TransactionEvent[] } | null;
 }
 const address = /^0x[\da-f]{40}$/i;
 const nonnegative = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0;
@@ -32,6 +33,8 @@ export function validateLedger(value: unknown, mode: Mode, account: string | nul
   if (!v.tokens || typeof v.tokens !== "object" || Array.isArray(v.tokens)) throw new Error("Missing token metadata");
   for (const [token, meta] of Object.entries(v.tokens)) if (!address.test(token) || !meta || typeof meta.symbol !== "string" || !Number.isInteger(meta.decimals) || meta.decimals < 0 || meta.decimals > 36 || !Number.isSafeInteger(meta.fee) || meta.fee < 0) throw new Error("Invalid saved token metadata");
   if (v.pending !== null && (!v.pending || typeof v.pending !== "object" || typeof v.pending.id !== "string" || !address.test(v.pending.token) || !["BUY", "SELL"].includes(v.pending.side) || !Number.isFinite(Date.parse(v.pending.createdAt)))) throw new Error("Invalid pending execution record");
+  if(v.pending?.hash && !/^0x[\da-f]{64}$/i.test(v.pending.hash))throw new Error("Invalid pending transaction hash");
+  if(v.pending?.transactions)for(const tx of v.pending.transactions)if(!["approval","swap","unwrap"].includes(tx.kind)||!/^0x[\da-f]{64}$/i.test(tx.hash)||!["submitted","success","reverted"].includes(tx.stage)||!Number.isFinite(Date.parse(tx.at))||(tx.gasWei!==undefined&&!/^\d+$/.test(tx.gasWei)))throw new Error("Invalid transaction journal");
   return v;
 }
 
@@ -50,7 +53,8 @@ export function saveLedger(directory: string, state: Ledger): void {
   mkdirSync(directory, { recursive: true });
   const path = join(directory, `${state.mode}-state.json`);
   const temporary = `${path}.${process.pid}.tmp`;
-  writeFileSync(temporary, JSON.stringify(state, null, 2), { mode: 0o600 });
+  const fd=openSync(temporary,"w",0o600);
+  try {writeFileSync(fd,JSON.stringify(state,null,2));fsyncSync(fd);} finally {closeSync(fd);}
   renameSync(temporary, path);
 }
 

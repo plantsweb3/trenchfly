@@ -15,7 +15,6 @@ import {
   parseAbi,
   parseEther,
   type Address,
-  type TransactionReceipt,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { appendFileSync, mkdirSync } from "node:fs";
@@ -26,6 +25,8 @@ import { publicClient, quoteBuyOut, quoteSellOut } from "./market";
 import { assertChain } from "./guard";
 import { receiptFee, receivedTokens } from "./settlement";
 import { rpcUrl } from "./rpc";
+import { executeOrder, type TransactionEvent } from "./execution-engine";
+export type { ExecutionResult } from "./execution-engine";
 
 const dir = dirname(fileURLToPath(import.meta.url));
 const runsDir = join(dir, "runs");
@@ -80,102 +81,29 @@ export function walletFromEnv() {
   };
 }
 
-export interface ExecutionResult {
-  hash: `0x${string}`;
-  amountInRaw: bigint;
-  amountOutRaw: bigint;
-  gasWei: bigint;
-  settlementComplete: boolean;
-}
-
-async function confirmed(hash: `0x${string}`): Promise<TransactionReceipt> {
-  logRun({ kind: "transaction", stage: "submitted", hash });
-  const receipt = await publicClient.waitForTransactionReceipt({ hash, timeout: 120_000 });
-  logRun({ kind: "transaction", stage: receipt.status, hash, gasWei: receiptFee(receipt) });
-  if (receipt.status !== "success") {
-    throw new Error(`tx reverted: ${hash}`);
-  }
-  return receipt;
-}
-
-export async function placeLive(intent: OrderIntent): Promise<ExecutionResult> {
+export async function placeLive(intent: OrderIntent, journal:(event:TransactionEvent)=>void, assertFresh:()=>void) {
   assertChain(await publicClient.getChainId(), robinhoodChain.id);
-  const wallet = walletFromEnv();
-  if (!wallet) throw new Error("FLY_PRIVATE_KEY missing — run wallet:new");
-  const { account, client } = wallet;
-  const minOutFactor = 10_000n - BigInt(GUARD.slippageBps);
-  let gasWei = 0n;
-  const minimum = (quote: bigint) => {
-    const value = quote * minOutFactor / 10_000n;
-    if (value <= 0n) throw new Error("Quote too small to enforce the slippage limit");
-    return value;
-  };
-  const checkedSwap = async (params: { tokenIn: Address; tokenOut: Address; fee: number; recipient: Address; amountIn: bigint; amountOutMinimum: bigint; sqrtPriceLimitX96: bigint }, value?: bigint) => {
-    const request = { address: CONTRACTS.swapRouter02 as Address, abi: routerAbi, functionName: "exactInputSingle" as const, args: [params] as const, value };
-    await publicClient.simulateContract({ ...request, account: account.address });
-    return client.writeContract(request);
-  };
-
-  if (intent.side === "BUY") {
-    const amountIn = parseEther(intent.amount.toFixed(18));
-    const quotedOut = await quoteBuyOut(intent.token, intent.fee, amountIn);
-    if (quotedOut === null) throw new Error("no buy quote at order size");
-    const hash = await checkedSwap({
-      tokenIn: CONTRACTS.weth as Address, tokenOut: intent.token,
-      fee: intent.fee, recipient: account.address, amountIn,
-      amountOutMinimum: minimum(quotedOut), sqrtPriceLimitX96: 0n,
-    }, amountIn);
-    const receipt = await confirmed(hash);
-    const amountOutRaw = receivedTokens(receipt, intent.token, account.address);
-    if (amountOutRaw <= 0n) throw new Error(`confirmed swap needs token reconciliation: ${hash}`);
-    return { hash, amountInRaw: amountIn, amountOutRaw, gasWei: receiptFee(receipt), settlementComplete: true };
-  }
-
-  // SELL: raw amount is authoritative; approve, swap, unwrap proceeds.
-  const amountIn = intent.amountRaw;
-  if (amountIn === undefined || amountIn <= 0n)
-    throw new Error("sell without raw amount");
-  const quotedOut = await quoteSellOut(intent.token, intent.fee, amountIn);
-  if (quotedOut === null) throw new Error("no sell quote at order size");
-  minimum(quotedOut);
-  const allowance = await publicClient.readContract({
-    address: intent.token,
-    abi: erc20Abi,
-    functionName: "allowance",
-    args: [account.address, CONTRACTS.swapRouter02 as Address],
+  const wallet=walletFromEnv();if(!wallet)throw new Error("Live wallet unconfigured");
+  const {account,client}=wallet;
+  const amountIn=intent.side==="BUY"?parseEther(intent.amount.toFixed(18)):intent.amountRaw;
+  if(amountIn===undefined || amountIn<=0n || !Number.isFinite(intent.amount) || intent.amount<=0 || (intent.side==="BUY" && intent.amount>GUARD.orderEth))throw new Error("Invalid order amount");
+  const swapRequest=(side:"BUY"|"SELL",amount:bigint,minimum:bigint)=>({
+    address:CONTRACTS.swapRouter02 as Address,abi:routerAbi,functionName:"exactInputSingle" as const,
+    args:[{tokenIn:side==="BUY"?CONTRACTS.weth as Address:intent.token,tokenOut:side==="BUY"?intent.token:CONTRACTS.weth as Address,fee:intent.fee,recipient:account.address,amountIn:amount,amountOutMinimum:minimum,sqrtPriceLimitX96:0n}] as const,
+    value:side==="BUY"?amount:undefined,
   });
-  if (allowance < amountIn) {
-    const approveHash = await client.writeContract({
-      address: intent.token,
-      abi: erc20Abi,
-      functionName: "approve",
-      args: [CONTRACTS.swapRouter02 as Address, amountIn],
-    });
-    gasWei += receiptFee(await confirmed(approveHash));
-  }
-
-  const hash = await checkedSwap({
-    tokenIn: intent.token, tokenOut: CONTRACTS.weth as Address,
-    fee: intent.fee, recipient: account.address, amountIn,
-    amountOutMinimum: minimum(quotedOut), sqrtPriceLimitX96: 0n,
-  });
-  const receipt = await confirmed(hash);
-  gasWei += receiptFee(receipt);
-  const proceeds = receivedTokens(receipt, CONTRACTS.weth as Address, account.address);
-  if (proceeds <= 0n) throw new Error(`confirmed sell needs proceeds reconciliation: ${hash}`);
-  // Settle only proceeds credited by this swap. Existing WETH is unrelated.
-  // If settlement fails, the caller records the confirmed swap and pauses.
-  try {
-    const unwrapHash = await client.writeContract({
-      address: CONTRACTS.weth as Address,
-      abi: wethAbi,
-      functionName: "withdraw",
-      args: [proceeds],
-    });
-    gasWei += receiptFee(await confirmed(unwrapHash));
-  } catch {
-    logRun({ kind: "settlement", stage: "needs_reconciliation", swapHash: hash, proceeds });
-    return { hash, amountInRaw: amountIn, amountOutRaw: proceeds, gasWei, settlementComplete: false };
-  }
-  return { hash, amountInRaw: amountIn, amountOutRaw: proceeds, gasWei, settlementComplete: true };
+  const approval=(amount:bigint)=>({address:intent.token,abi:erc20Abi,functionName:"approve" as const,args:[CONTRACTS.swapRouter02 as Address,amount] as const});
+  const unwrap=(amount:bigint)=>({address:CONTRACTS.weth as Address,abi:wethAbi,functionName:"withdraw" as const,args:[amount] as const});
+  return executeOrder({side:intent.side,amountIn,slippageBps:GUARD.slippageBps},{
+    quote:(side,amount)=>side==="BUY"?quoteBuyOut(intent.token,intent.fee,amount):quoteSellOut(intent.token,intent.fee,amount),
+    allowance:()=>publicClient.readContract({address:intent.token,abi:erc20Abi,functionName:"allowance",args:[account.address,CONTRACTS.swapRouter02 as Address]}),
+    async simulateApproval(amount){const result=await publicClient.simulateContract({...approval(amount),account:account.address});if(!result.result)throw new Error("Approval simulation returned false");},
+    approve:amount=>client.writeContract(approval(amount)),
+    async simulateSwap(side,amount,minimum){await publicClient.simulateContract({...swapRequest(side,amount,minimum),account:account.address});},
+    swap:(side,amount,minimum)=>client.writeContract(swapRequest(side,amount,minimum)),
+    async simulateUnwrap(amount){await publicClient.simulateContract({...unwrap(amount),account:account.address});},
+    unwrap:amount=>client.writeContract(unwrap(amount)),
+    async receipt(hash){const r=await publicClient.waitForTransactionReceipt({hash,timeout:120_000});return {status:r.status,gasWei:receiptFee(r),received:receivedTokens(r,intent.side==="BUY"?intent.token:CONTRACTS.weth as Address,account.address)};},
+    assertFresh,
+  },event=>{journal(event);logRun({recordType:"transaction",...event});});
 }

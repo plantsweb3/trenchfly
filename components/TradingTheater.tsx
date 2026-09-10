@@ -53,6 +53,13 @@ function NeuralWindow({ decision, tier, active, pulse }: { decision?: SessionDec
       <text x="58" y="195">LEFT OUTPUT</text><text x="211" y="195">RIGHT OUTPUT</text>
     </svg>
     <div className={s.rates}><div><span>LEFT MOTOR</span><strong>{hasRates ? decision!.rateL!.toFixed(1) : "—"}<small>Hz</small></strong><div className={s.rateTrack}><i style={{ width: `${left * 100}%` }} /></div></div><div><span>RIGHT MOTOR</span><strong>{hasRates ? decision!.rateR!.toFixed(1) : "—"}<small>Hz</small></strong><div className={s.rateTrack}><i style={{ width: `${right * 100}%` }} /></div></div></div>
+    {decision?.neural && <div className={s.spikeTrace}>
+      <div><span>RECORDED SPIKE TRACE</span><b>{decision.neural.totalSpikes.toLocaleString("en-US")} spikes</b></div>
+      <svg viewBox="0 0 300 54" role="img" aria-label={`Measured left and right motor rates in ${decision.neural.bins.length} bins across ${decision.neural.neuralMs} milliseconds of simulated neural time`}>
+        <path d="M0 50H300" stroke="#2e3c28" />
+        {(["rateL","rateR"] as const).map((side,i)=><polyline key={side} fill="none" stroke={i?"#93d5f7":"#d7ff3f"} strokeWidth="1.8" points={decision.neural!.bins.map((b,j)=>`${5+j*290/Math.max(1,decision.neural!.bins.length-1)},${49-Math.min(1,b[side]/500)*44}`).join(" ")} />)}
+      </svg><small>{decision.neural.neuralMs} ms neural time · 50 ms bins · L lime / R blue · 0–500 Hz</small>
+    </div>}
     <p className={s.neuralNote}>Glowing facets visualize the recorded motor-rate summary. Pulses and connections are illustrative, not individual neuron measurements. Scale: 0–400 Hz.</p>
   </div>;
 }

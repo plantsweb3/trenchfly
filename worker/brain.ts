@@ -27,6 +27,9 @@ const BRAIN_DIR = join(dir, "..", "brain");
 
 export type Proposal = "BUY" | "SELL" | "HOLD";
 
+export interface NeuralBin { tMs: number; rateL: number; rateR: number; gateSpikes: number; totalSpikes: number }
+export interface NeuralSummary { neuralMs: number; totalSpikes: number; bins: NeuralBin[]; populations: { name: string; neurons: number; spikes: number; rateHz: number }[]; mapping: string }
+
 export interface Decision {
   proposal: Proposal;
   rateL: number;
@@ -34,12 +37,14 @@ export interface Decision {
   gate: boolean;
   diff: number;
   frameSha?: string;
+  neural?: NeuralSummary;
+  inferenceMs?: number;
 }
 
 export interface BrainIface {
   tier: 1 | 2;
   label: string;
-  decide(symbol: string, history: number[], price: number, key?: string): Promise<Decision>;
+  decide(symbol: string, history: number[], price: number, key?: string, context?: Record<string, unknown>): Promise<Decision>;
   close(): void;
 }
 
@@ -201,26 +206,27 @@ export async function createBrain({ requireConnectome = true }: { requireConnect
       ]).finally(() => clearTimeout(bootTimer));
       // The active-regime network keeps DNp20 rates high and near-equal,
       // so the decode reads the DEVIATION of (R−L) from its own rolling
-      // baseline — a declared adaptation that makes the readout respond
-      // to chart transitions (v1 sensory mapping has no retinotopy yet;
+      // baseline. Causal image sensitivity is tested separately; this
+      // adaptation is not evidence of chart understanding (v1 sensory mapping has no retinotopy yet;
       // that is the next brain checklist item).
       const emaBySymbol = new Map<string, number>();
       return {
         tier: 2,
         close: () => kernel.close(),
         label: `tier-2 connectome (${info.neurons.toLocaleString()} neurons, ${info.synapses.toLocaleString()} synapses)`,
-        async decide(symbol, history, price, key) {
+        async decide(symbol, history, _price, key, context) {
+          const started = Date.now();
           const j = (await kernel.request({
             symbol,
             prices: history.slice(-100),
-            bid: price * 0.9985,
-            ask: price * 1.0015,
+            context,
             neural_ms: 500,
           })) as {
             rateL: number;
             rateR: number;
             dnpe017_spikes: number;
             frame_sha256?: string;
+            neural?: NeuralSummary;
             error?: string;
           };
           if (j.error) throw new Error(`brain: ${j.error}`);
@@ -242,6 +248,8 @@ export async function createBrain({ requireConnectome = true }: { requireConnect
             gate,
             diff: dev,
             frameSha: j.frame_sha256,
+            neural: j.neural,
+            inferenceMs: Date.now() - started,
           };
         },
       };

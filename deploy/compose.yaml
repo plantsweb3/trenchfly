@@ -1,0 +1,29 @@
+services:
+  paper-worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    # A provider denial or accounting error must remain stopped for inspection.
+    # On a new host, start this service deliberately after restoring its state.
+    restart: "no"
+    init: true
+    env_file: ./worker.env
+    environment:
+      ROBINFLY_TELEMETRY_BIND: 0.0.0.0
+      FLY_PRIVATE_KEY: ""
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - ./data/graph.npz:/opt/robinfly/brain/graph.npz:ro
+      - ./data/worker-runs:/opt/robinfly/worker/runs
+      - ./data/brain-runs:/opt/robinfly/brain/runs
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    mem_limit: 6g
+    cpus: 2
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
