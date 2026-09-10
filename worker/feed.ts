@@ -1,119 +1,95 @@
-// Publishes the worker's real session state to the repo's `feed` branch:
-// latest.json + the exact frame PNGs the connectome saw. Because every
-// update is a git commit, the feed is a public, tamper-evident log —
-// rewriting it would be visible to anyone who cloned.
-//
-// Throttled: publishes at most every PUBLISH_MS, or immediately on a fill.
-
-import { execSync } from "node:child_process";
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  unlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import type { Mode } from "./state";
 
-const dir = dirname(fileURLToPath(import.meta.url));
-const REPO = join(dir, "..");
+const execute = promisify(execFile);
+const REPO = join(dirname(fileURLToPath(import.meta.url)), "..");
 const WT = join(REPO, ".feed-worktree");
-const FRAMES_SRC = join(REPO, "brain", "runs", "frames");
-const PUBLISH_MS = 150_000;
+const FRAMES = join(REPO, "brain", "runs", "frames");
+const INTERVAL = 60_000;
 
 export interface FeedDecision {
-  t: string;
-  symbol: string;
-  proposal: string;
-  rateL: number;
-  rateR: number;
-  dev: number;
-  gate: boolean;
-  frameSha?: string;
-  result: string; // "hold" | "paper fill" | "live <txhash>" | "rejected: ..."
+  t: string; symbol: string; proposal: string; rateL: number; rateR: number;
+  dev: number; gate: boolean; frameSha?: string; result: string;
+  token?: string; priceEth?: number; quoteAt?: string; id?: string;
+}
+export type WorkerStatus = "starting" | "warming" | "running" | "degraded" | "stopped";
+export interface FeedMarket {
+  symbol: string; address: string; status: "checking" | "warming" | "ready" | "no_quote" | "error";
+  samples: number; lastQuoteAt: string | null; priceEth: number | null;
+}
+export interface FeedPayload {
+  schemaVersion: 2; mode: Mode; runId: string; status: WorkerStatus;
+  tier: 1 | 2 | null; brainLabel: string; startedAt: string; obs: number;
+  watching: string[]; recent: FeedDecision[]; lastObservationAt: string | null;
+  markets: FeedMarket[]; lastError: string | null;
+  accounting: { kind: "quote_based_paper" | "live_ledger"; gasIncluded: boolean; orders: number };
 }
 
-let lastPublish = 0;
-let ready = false;
+let lastSuccess = 0;
+let active: Promise<boolean> | null = null;
+let queued: FeedPayload | null = null;
+let queuedUrgent = false;
 
-function git(cmd: string) {
-  execSync(cmd, { stdio: "pipe" });
+async function git(args: string[], cwd = WT) {
+  return execute("git", args, { cwd, timeout: 20_000, maxBuffer: 256 * 1024, env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } });
 }
 
-function ensureWorktree(): boolean {
-  if (ready) return true;
+export function referencedFrames(payload: Pick<FeedPayload, "recent">): Set<string> {
+  return new Set(payload.recent.flatMap(d => d.frameSha && /^[a-f\d]{64}$/i.test(d.frameSha) ? [`${d.frameSha}.png`] : []));
+}
+
+async function publish(payload: FeedPayload): Promise<boolean> {
   try {
     if (!existsSync(join(WT, ".git"))) {
-      try {
-        git(`git -C "${REPO}" branch feed origin/feed`);
-      } catch {
-        try {
-          git(`git -C "${REPO}" branch feed`);
-        } catch {
-          /* branch exists */
-        }
-      }
-      git(`git -C "${REPO}" worktree add "${WT}" feed`);
+      await git(["fetch", "origin", "feed"], REPO);
+      try { await git(["show-ref", "--verify", "refs/heads/feed"], REPO); }
+      catch { await git(["branch", "feed", "origin/feed"], REPO); }
+      await git(["worktree", "add", WT, "feed"], REPO);
     }
-    ready = true;
+    const document = { updatedAt: new Date().toISOString(), ...payload };
+    const temporary = join(WT, "latest.json.tmp");
+    writeFileSync(temporary, JSON.stringify(document));
+    renameSync(temporary, join(WT, "latest.json"));
+    const framesDir = join(WT, "frames");
+    mkdirSync(framesDir, { recursive: true });
+    const keep = referencedFrames(payload);
+    for (const name of keep) {
+      const from = join(FRAMES, name), to = join(framesDir, name);
+      if (existsSync(from) && !existsSync(to)) copyFileSync(from, to);
+    }
+    for (const name of readdirSync(framesDir)) if (/^[a-f\d]{64}\.png$/i.test(name) && !keep.has(name)) unlinkSync(join(framesDir, name));
+    // Only telemetry files enter the public feed commit. Never overwrite remote history.
+    await git(["add", "--", "latest.json", "frames"]);
+    await git(["-c", "user.name=RobinFly worker", "-c", "user.email=worker@robinfly.net", "commit", "--allow-empty", "-m", `feed: ${payload.mode} ${payload.status}, obs ${payload.obs}`]);
+    await git(["push", "-q", "origin", "HEAD:feed"]);
+    lastSuccess = Date.now();
     return true;
-  } catch (e) {
-    console.error(`feed: worktree setup failed — ${(e as Error).message}`);
+  } catch (error) {
+    console.error(`feed: publish failed; history preserved (${(error as Error).message.slice(0, 240)})`);
     return false;
   }
 }
 
-export function maybePublish(
-  payload: {
-    tier: number;
-    brainLabel: string;
-    startedAt: string;
-    obs: number;
-    watching: string[];
-    recent: FeedDecision[];
-  },
-  urgent = false,
-): void {
-  const now = Date.now();
-  if (!urgent && now - lastPublish < PUBLISH_MS) return;
-  if (!ensureWorktree()) return;
-  lastPublish = now;
-  try {
-    writeFileSync(
-      join(WT, "latest.json"),
-      JSON.stringify({ updatedAt: new Date().toISOString(), ...payload }),
-    );
-    const framesDir = join(WT, "frames");
-    mkdirSync(framesDir, { recursive: true });
-    const keep = new Set(
-      payload.recent
-        .slice(-12)
-        .map((d) => d.frameSha && `${d.frameSha}.png`)
-        .filter(Boolean) as string[],
-    );
-    for (const name of keep) {
-      const src = join(FRAMES_SRC, name);
-      const dst = join(framesDir, name);
-      if (existsSync(src) && !existsSync(dst)) copyFileSync(src, dst);
+/** Serialize asynchronous publishes; keep only the newest pending snapshot. */
+export function maybePublish(payload: FeedPayload, urgent = false): Promise<boolean> {
+  queued = structuredClone(payload);
+  queuedUrgent ||= urgent;
+  if (active) return active;
+  if (!queuedUrgent && Date.now() - lastSuccess < INTERVAL) return Promise.resolve(false);
+  active = (async () => {
+    let published = false;
+    while (queued && (queuedUrgent || Date.now() - lastSuccess >= INTERVAL)) {
+      const next = queued; queued = null; queuedUrgent = false;
+      published = await publish(next);
+      if (!published) break;
     }
-    // working set stays bounded: drop frames no longer referenced
-    for (const f of readdirSync(framesDir)) {
-      if (!keep.has(f)) unlinkSync(join(framesDir, f));
-    }
-    git(`git -C "${WT}" add -A`);
-    git(
-      `git -C "${WT}" -c user.name="trenchfly worker" -c user.email="fly@trenchfly.xyz" ` +
-        `commit -m "feed: obs ${payload.obs}" --allow-empty`,
-    );
-    try {
-      git(`git -C "${WT}" push -q origin feed`);
-    } catch {
-      // remote moved (or first divergence): worker is the authority
-      git(`git -C "${WT}" push -q --force origin feed`);
-    }
-  } catch (e) {
-    console.error(`feed: publish failed — ${(e as Error).message}`);
-  }
+    return published;
+  })().finally(() => { active = null; });
+  return active;
 }
+
+export async function flushFeed(): Promise<void> { await active; }

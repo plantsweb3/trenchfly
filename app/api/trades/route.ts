@@ -17,8 +17,6 @@ export async function GET() {
       `${ROBINHOOD_CHAIN.explorer}/api/v2/addresses/${FLY_WALLET}/transactions`,
       {
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
           Accept: "application/json",
         },
         next: { revalidate: 30 },

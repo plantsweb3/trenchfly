@@ -1,39 +1,35 @@
-# TRENCHFLY
+# RobinFly
 
-A fly brain with $100 and an EVM wallet, trading memecoin launches on
-[Robinhood Chain](https://robinhoodchain.blockscout.com) — Pons, long.xyz
-and o1. The anatomy comes from the
-[MaleCNS v1.0](https://male-cns.janelia.org/) connectome release (Janelia
-Research Campus): 166,700 neurons, 25.6M directed connections, released
-for science, repurposed for the trenches.
+[robinfly.net](https://robinfly.net) — a public experiment connecting a fruit-fly connectome model to market-chart observations on Robinhood Chain (mainnet 4663).
 
-**Live:** [trenchfly.xyz](https://trenchfly.xyz)
+The homepage shows the worker's published record. Its Blender-rigged fly sits at a trading desk; the monitor shows the exact chart image for the selected decision. BUY and SELL animations replay that decision. A schematic neural window uses the published left/right motor rates; its dots are not individual-neuron measurements. Paused or stale sessions do not automatically animate.
 
-## How it works
+## What is implemented
 
-Chart → retina (3,335 R1–R6 + 811 R8 photoreceptors) → connectome →
-DNp20 left/right decoder (±2 Hz with a DNpe017 spike) → guard → order.
-Profit ≥ $0.01 pulses 15 PAM11 dopamine cells; losses pulse 2 PPL101
-aversive cells; 7,835 KC→MBON synapses drift in response. No LLM selects
-trades. No price rule overrides the neural proposal.
+- The full kernel adapter loads 166,700 neurons and 25,147,397 compiled synapses. The worker requires it by default; an explicitly allowed paper proxy is labeled separately.
+- Quotes become chart images, the model returns motor activity, and a decoder produces BUY, SELL or HOLD. The guard can reject a proposal.
+- Paper execution uses real order-size v3 quotes, with separate persistent accounting. It includes quoted pool fees and price impact, but excludes network gas.
+- The session reports mode, worker status, market coverage, timestamps, chart hashes, decisions and reported outcomes. Transaction references link to independent receipts.
+- The live execution implementation contains pre-submission simulation and receipt accounting, but complete live buy/sell/recovery operation has not been demonstrated by the launch checks.
 
-## Repo layout
+## What is not demonstrated
 
-- `app/`, `components/`, `lib/` — the Next.js site. The terminal on the
-  homepage is a client-side **paper simulation** until the wallet goes
-  live; it is labeled as such on the page.
-- `worker/` — the execution loop: decoder proposals → Uniswap v3 swaps on
-  Robinhood Chain (chain 4663) from the fly's wallet. Paper by default,
-  `--live` opt-in. See `worker/README.md`, including the tier-1 vs tier-2
-  honesty note.
-- `lib/chain.ts` — verified chain constants (RPC, explorer, Uniswap v3,
-  WETH, Pons contracts).
+Profitable learning, trading edge, biological equivalence, retinotopic visual processing and dopamine reinforcement are not established. The rendered fly is a mascot, not a biological visualization. A quote or eth_call simulation is not a settled trade. The v3 route implementation does not establish support for every venue in the watchlist.
 
-## Run the site
+## Project
+
+- `app/`, `components/`, `lib/`: Next.js public observation site.
+- `worker/`: paper-default observation and execution loop. See its README.
+- `brain/`: computational model and chart rendering.
+- `public/models/robinfly/`: original rigged fly, workstation, and fallback artwork.
+
+The GitHub repository and feed retain their existing names so published links continue to work. Public branding and canonical URLs use RobinFly.
+
+## Site development
 
 ```sh
 npm install
 npm run dev
 ```
 
-Profitable learning has not been demonstrated. The fly does not know.
+`NEXT_PUBLIC_FLY_WALLET` is a public address. `NEXT_PUBLIC_SITE_URL` may override the canonical `https://robinfly.net`. `ROBINFLY_RPC_URL` is server-only and must never use a `NEXT_PUBLIC_` prefix. Keys, accounting files and model runtime outputs are excluded from version control.

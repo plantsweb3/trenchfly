@@ -1,0 +1,20 @@
+{
+  "blender": "5.2.1 LTS",
+  "mesh_vertices": 2196,
+  "triangles": 3754,
+  "materials": 14,
+  "bones": 32,
+  "deforming_bones": 26,
+  "clips": {
+    "Idle": 3.0,
+    "WingFlutter": 1.0,
+    "BuyReact": 1.5,
+    "SellReact": 1.5,
+    "BuzzOff": 2.0
+  },
+  "units": "Blender meters; stylized normalized mascot, not life size",
+  "forward_blender": "+X",
+  "up_blender": "+Z",
+  "glb_up": "+Y",
+  "glb_bytes": 650324
+}

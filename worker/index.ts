@@ -1,360 +1,254 @@
-// Trenchfly worker: the decision loop that turns decoder proposals into
-// Robinhood Chain orders. Paper by default; --live requires a funded
-// worker/.env wallet and explicit intent. Ctrl-C stops it cleanly.
-
+// RobinFly worker. Paper is the default; no signer is loaded in paper mode.
 import "dotenv/config";
 import { config as loadEnv } from "dotenv";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { formatEther, type Address } from "viem";
+import { randomUUID } from "node:crypto";
+import { formatEther, formatUnits, isAddress, parseEther, parseUnits, type Address } from "viem";
 import { GUARD, robinhoodChain } from "./config";
-import { createBrain, type BrainIface } from "./brain";
-import {
-  publicClient,
-  quoteEth,
-  tokenBalance,
-  tokenDecimals,
-} from "./market";
+import { createBrain, type BrainIface, type Decision } from "./brain";
+import { publicClient, quoteEth, quoteBuyOut, quoteSellOut, tokenBalance, tokenDecimals } from "./market";
 import { logRun, placeLive, walletFromEnv, type OrderIntent } from "./execute";
 import { scanNewPools } from "./discovery";
-import { maybePublish, type FeedDecision } from "./feed";
+import { maybePublish, flushFeed, type FeedDecision, type FeedPayload, type WorkerStatus } from "./feed";
+import { acquireWorkerLock, loadLedger, saveLedger, type Ledger, type Mode } from "./state";
+import { assertChain, guardReason } from "./guard";
+import { rpcFailureStatus, safeError } from "../lib/rpc-config";
 
 const dir = dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: join(dir, ".env") });
-
 const LIVE = process.argv.includes("--live");
+const mode: Mode = LIVE ? "live" : "paper";
 const PREFLIGHT = process.argv.includes("--preflight");
-
-let BRAIN: BrainIface;
+const NO_PUBLISH = process.argv.includes("--no-publish");
+const DISCOVER = process.argv.includes("--discover");
+const maxArg = process.argv.find(a => a.startsWith("--max-observations="))?.split("=")[1];
+const maxObservations = maxArg ? Number(maxArg) : Infinity;
+if (maxArg && (!Number.isInteger(maxObservations) || maxObservations < 1)) throw new Error("--max-observations must be a positive integer");
+const runs = join(dir, "runs");
+const runId = randomUUID();
+const startedAt = new Date().toISOString();
 
 interface WatchToken {
-  symbol: string;
-  venue: string;
-  address: string;
-  decimals?: number;
-  history: number[];
-  fee?: number;
+  symbol: string; venue: string; address: Address; decimals?: number; history: number[]; fee?: number;
+  lastQuoteAt: number; status: "checking" | "warming" | "ready" | "no_quote" | "error";
 }
+const watchlist: WatchToken[] = [];
+for (const t of JSON.parse(readFileSync(join(dir, "watchlist.json"), "utf8")).tokens) {
+  if (!isAddress(t.address, { strict: false })) throw new Error(`Invalid watchlist address for ${String(t.symbol).slice(0, 24)}`);
+  if (!watchlist.some(w => w.address.toLowerCase() === t.address.toLowerCase())) watchlist.push({ ...t, symbol: String(t.symbol).slice(0, 24), history: [], lastQuoteAt: 0, status: "checking" });
+}
+if (!watchlist.length) throw new Error("Watchlist is empty");
 
-const watchlist: WatchToken[] = JSON.parse(
-  readFileSync(join(dir, "watchlist.json"), "utf8"),
-).tokens.map((t: Omit<WatchToken, "history">) => ({ ...t, history: [] }));
-
-let ordersTotal = 0;
+let brain: BrainIface | undefined;
+let state: Ledger;
+let liveAddress: Address | null = null;
+let status: WorkerStatus = "starting";
+let lastError: string | null = null;
 let obsTotal = 0;
-const startedAt = new Date().toISOString();
-const recentDecisions: FeedDecision[] = [];
-let paperEth = GUARD.capitalEth;
+let lastObservationAt: string | null = null;
+let stopping = false;
+let fatal = false;
+let wake: (() => void) | undefined;
+const recent: FeedDecision[] = [];
+const key = (t: WatchToken) => t.address.toLowerCase();
 
-function recordDecision(
-  t: WatchToken,
-  d: { proposal: string; rateL: number; rateR: number; diff: number; gate: boolean; frameSha?: string },
-  result: string,
-  urgent: boolean,
-) {
-  obsTotal += 1;
-  recentDecisions.push({
-    t: new Date().toISOString(),
-    symbol: t.symbol,
-    proposal: d.proposal,
-    rateL: Math.round(d.rateL * 10) / 10,
-    rateR: Math.round(d.rateR * 10) / 10,
-    dev: Math.round(d.diff * 100) / 100,
-    gate: d.gate,
-    frameSha: d.frameSha,
-    result,
-  });
-  if (recentDecisions.length > 40) recentDecisions.shift();
-  maybePublish(
-    {
-      tier: BRAIN.tier,
-      brainLabel: BRAIN.label,
-      startedAt,
-      obs: obsTotal,
-      watching: watchlist.filter((w) => w.address).map((w) => w.symbol),
-      recent: recentDecisions,
-    },
-    urgent,
-  );
+function snapshot(): FeedPayload {
+  return {
+    schemaVersion: 2, mode, runId, status, tier: brain?.tier ?? null,
+    brainLabel: brain?.label ?? "Starting connectome", startedAt, obs: obsTotal,
+    lastObservationAt, lastError, watching: watchlist.map(t => t.symbol), recent,
+    markets: watchlist.map(t => ({ symbol: t.symbol, address: t.address, status: t.status, samples: t.history.length, lastQuoteAt: t.lastQuoteAt ? new Date(t.lastQuoteAt).toISOString() : null, priceEth: t.history.at(-1) ?? null })),
+    accounting: { kind: LIVE ? "live_ledger" : "quote_based_paper", gasIncluded: LIVE, orders: state?.ordersTotal ?? 0 },
+  };
 }
-const paperHoldings = new Map<string, number>();
-const hkey = (t: WatchToken) => t.address.toLowerCase();
-
-// Creator rewards / deposits flow into this wallet, so drawdown is measured
-// on TRADING P&L only (sell proceeds + open position value − buy costs) —
-// never on the raw balance, which is expected to grow with coin volume.
-// Totals persist across restarts so the drawdown stop keeps its memory.
-const STATE_PATH = join(dir, "runs", "state.json");
-let buyTotalEth = 0;
-let sellTotalEth = 0;
-try {
-  if (existsSync(STATE_PATH)) {
-    const st = JSON.parse(readFileSync(STATE_PATH, "utf8"));
-    buyTotalEth = st.buyTotalEth ?? 0;
-    sellTotalEth = st.sellTotalEth ?? 0;
-    ordersTotal = st.ordersTotal ?? 0;
-  }
-} catch {
-  /* fresh state */
+function publish(urgent = false) { return NO_PUBLISH ? Promise.resolve(true) : maybePublish(snapshot(), urgent); }
+function save() {
+  try { saveLedger(runs, state); }
+  catch (error) { fatal = true; stopping = true; status = "degraded"; lastError = "Accounting could not be saved; worker stopped."; throw error; }
 }
-function saveState() {
-  try {
-    writeFileSync(
-      STATE_PATH,
-      JSON.stringify({ buyTotalEth, sellTotalEth, ordersTotal }),
-    );
-  } catch {
-    /* non-fatal */
-  }
-}
-
-async function positionsEth(address: Address | null): Promise<number> {
-  let v = 0;
-  for (const t of watchlist) {
-    const px = t.history[t.history.length - 1];
-    if (!px) continue;
-    if (!LIVE || !address) {
-      v += (paperHoldings.get(hkey(t)) ?? 0) * px;
-    } else if (t.address && t.decimals !== undefined) {
-      const bal = await tokenBalance(t.address as Address, address);
-      if (bal > 0n) v += (Number(bal) / 10 ** t.decimals) * px;
-    }
-  }
-  return v;
+function record(t: WatchToken, d: Decision, result: string, urgent = false) {
+  const decision = { id: randomUUID(), t: new Date().toISOString(), symbol: t.symbol, token: t.address, proposal: d.proposal, rateL: +d.rateL.toFixed(1), rateR: +d.rateR.toFixed(1), dev: +d.diff.toFixed(2), gate: d.gate, frameSha: d.frameSha, result, priceEth: t.history.at(-1), quoteAt: new Date(t.lastQuoteAt).toISOString() };
+  obsTotal++; lastObservationAt = decision.t; recent.push(decision);
+  if (recent.length > 40) recent.shift();
+  logRun({ mode, runId, tier: brain?.tier, ...decision });
+  void publish(urgent);
 }
 
 async function preflight() {
-  const id = await publicClient.getChainId();
-  console.log(`chain: ${id} (${robinhoodChain.name}) — ${id === robinhoodChain.id ? "OK" : "MISMATCH"}`);
+  const actual = await publicClient.getChainId();
+  assertChain(actual, robinhoodChain.id);
+  console.log(`chain: ${actual} — verified`);
   const wallet = walletFromEnv();
-  if (!wallet) {
-    console.log("wallet: none (run `npm run wallet:new`)");
-  } else {
-    const bal = await publicClient.getBalance({
-      address: wallet.account.address,
-    });
-    const eth = Number(formatEther(bal));
-    console.log(`wallet: ${wallet.account.address}`);
-    console.log(`balance: ${eth.toFixed(6)} ETH`);
-    if (eth > GUARD.capitalEth)
-      console.log(
-        `WARN: balance exceeds guard capital ${GUARD.capitalEth} ETH — move the excess out.`,
-      );
+  if (wallet) console.log(`wallet: ${wallet.account.address}; balance: ${formatEther(await publicClient.getBalance({ address: wallet.account.address }))} ETH`);
+  else console.log("wallet: unconfigured (not needed for paper operation)");
+  let supported = 0;
+  for (const t of watchlist) {
+    try {
+      const decimals = await tokenDecimals(t.address);
+      const q = await quoteEth(t.address, decimals);
+      if (q) supported++;
+      console.log(`${t.symbol}: ${q ? `${q.priceEth.toExponential(4)} ETH; v3 fee ${q.fee}` : "no usable v3 quote"}`);
+    } catch (error) { if (rpcFailureStatus(error)) throw error; console.log(`${t.symbol}: token read unavailable`); }
   }
-  const live = watchlist.filter((t) => t.address);
-  console.log(
-    `watchlist: ${live.length}/${watchlist.length} tokens have addresses (${live.map((t) => t.symbol).join(", ") || "none"})`,
-  );
-  for (const t of live) {
-    const decimals = await tokenDecimals(t.address as Address).catch(() => null);
-    if (decimals === null) {
-      console.log(`  ${t.symbol}: not readable as ERC-20 — check the CA`);
-      continue;
-    }
-    const q = await quoteEth(t.address as Address, decimals);
-    console.log(
-      `  ${t.symbol}: ${q ? `${q.priceEth.toExponential(4)} ETH (fee ${q.fee})` : "no v3 pool quote — still on a curve?"}`,
-    );
-  }
+  console.log(`quoted markets: ${supported}/${watchlist.length}; no transactions submitted`);
+  if (!supported) throw new Error("No usable markets");
 }
 
-async function observe(t: WatchToken): Promise<void> {
-  if (!t.address) return;
-  if (t.decimals === undefined)
-    t.decimals = await tokenDecimals(t.address as Address);
-  const q = await quoteEth(t.address as Address, t.decimals);
-  if (!q) return;
-  t.fee = q.fee;
-  t.history = [...t.history.slice(-99), q.priceEth];
-  if (t.history.length < 8) return; // let the chart warm up
-
-  const d = await BRAIN.decide(t.symbol, t.history, q.priceEth, t.address);
-  const px = q.priceEth;
-  const line = `${t.symbol.padEnd(8)} ${px.toExponential(3)} ETH  L ${d.rateL.toFixed(1)} R ${d.rateR.toFixed(1)} Δ ${d.diff >= 0 ? "+" : ""}${d.diff.toFixed(2)}  ${d.proposal}`;
-
-  if (d.proposal === "HOLD") {
-    console.log(line);
-    recordDecision(t, d, "hold", false);
-    return;
+async function valuation(): Promise<{ total: number; complete: boolean }> {
+  let total = 0, complete = true;
+  for (const t of watchlist) {
+    let quantity = state.holdings[key(t)] ?? 0;
+    if (LIVE && liveAddress) {
+      try {
+        t.decimals ??= await tokenDecimals(t.address);
+        quantity = Number(formatUnits(await tokenBalance(t.address, liveAddress), t.decimals));
+      } catch (error) { if (rpcFailureStatus(error)) throw error; complete = false; continue; }
+    }
+    if (quantity <= 0) continue;
+    const price = t.history.at(-1);
+    if (!price || !Number.isFinite(price) || Date.now() - t.lastQuoteAt > 5 * 60_000) { complete = false; continue; }
+    total += quantity * price;
   }
+  for (const [address, quantity] of Object.entries(state.holdings)) if (quantity > 0 && !watchlist.some(t => key(t) === address)) complete = false;
+  return { total, complete };
+}
 
-  // ---- guard ----
-  const wallet = walletFromEnv();
-  const openPositionsEth = await positionsEth(
-    wallet?.account.address ?? null,
-  );
-  const tradingPnl = sellTotalEth + openPositionsEth - buyTotalEth;
-  const cashEth =
-    LIVE && wallet
-      ? Number(
-          formatEther(
-            await publicClient.getBalance({ address: wallet.account.address }),
-          ),
-        )
-      : paperEth;
+async function observe(t: WatchToken) {
+  t.decimals ??= await tokenDecimals(t.address);
+  if (!Number.isInteger(t.decimals) || t.decimals < 0 || t.decimals > 36) throw new Error("Unsupported token decimals");
+  const quote = await quoteEth(t.address, t.decimals);
+  if (!quote || !Number.isFinite(quote.priceEth) || quote.priceEth <= 0) { t.status = "no_quote"; return; }
+  t.fee = quote.fee; t.lastQuoteAt = Date.now();
+  t.history = [...t.history.slice(-99), quote.priceEth];
+  t.status = t.history.length < 8 ? "warming" : "ready";
+  state.tokens[key(t)] = { symbol: t.symbol, decimals: t.decimals, fee: t.fee };
+  if (t.history.length < 8 || stopping) return;
+  if (!brain) throw new Error("Brain unavailable");
+  const d = await brain.decide(t.symbol, t.history, quote.priceEth, t.address);
+  if (stopping) return;
+  status = "running"; lastError = null;
+  const line = `${t.symbol} ${d.proposal} L ${d.rateL.toFixed(1)} R ${d.rateR.toFixed(1)} Δ ${d.diff.toFixed(2)}`;
+  if (d.proposal === "HOLD") { console.log(`${line} HOLD`); record(t, d, "hold"); return; }
 
-  let rejected: string | null = null;
-  if (d.proposal === "BUY" && tradingPnl <= -GUARD.drawdownStopEth)
-    rejected = "drawdown stop — trading P&L, deposits excluded";
-  else if (
-    d.proposal === "BUY" &&
-    openPositionsEth + GUARD.orderEth > GUARD.maxInventoryEth
-  )
-    rejected = "inventory cap — open positions at maximum";
-  else if (d.proposal === "BUY" && cashEth < GUARD.orderEth * 1.2)
-    rejected = "budget — cash below order size";
-  let sellableQty = 0;
-  let sellableRaw = 0n;
+  const positions = await valuation();
+  const cashEth = LIVE && liveAddress ? Number(formatEther(await publicClient.getBalance({ address: liveAddress }))) : state.paperEth;
+  const rawBalance = LIVE && liveAddress ? await tokenBalance(t.address, liveAddress) : undefined;
+  const quantity = rawBalance !== undefined ? Number(formatUnits(rawBalance, t.decimals)) : state.holdings[key(t)] ?? 0;
+  const rejected = guardReason({ side: d.proposal, now: Date.now(), lastOrderAt: state.lastOrderAt, cashEth, positionsEth: positions.total, tradingPnl: state.sellTotalEth + positions.total - state.buyTotalEth - state.gasEth, sellableEth: quantity * quote.priceEth, valuationComplete: positions.complete, pending: state.pending !== null }, GUARD);
+  if (rejected) { console.log(`${line} REJECTED: ${rejected}`); record(t, d, `rejected: ${rejected}`); return; }
+
+  const intent: OrderIntent = { side: d.proposal, symbol: t.symbol, token: t.address, fee: t.fee, decimals: t.decimals, amount: d.proposal === "BUY" ? GUARD.orderEth : Math.min(GUARD.orderEth / quote.priceEth, quantity), priceEth: quote.priceEth };
   if (d.proposal === "SELL") {
-    if (LIVE && wallet) {
-      sellableRaw = await tokenBalance(
-        t.address as Address,
-        wallet.account.address,
-      );
-      sellableQty = Number(sellableRaw) / 10 ** t.decimals;
-    } else {
-      sellableQty = paperHoldings.get(hkey(t)) ?? 0;
-    }
-    if (sellableQty * px < GUARD.orderEth * 0.1)
-      rejected = "inventory — nothing to sell";
+    const balance = rawBalance ?? parseUnits(quantity.toFixed(t.decimals), t.decimals);
+    const fraction = Math.min(intent.amount / quantity, 1);
+    intent.amountRaw = fraction >= 1 ? balance : balance * BigInt(Math.floor(fraction * 1e9)) / 1_000_000_000n;
+    if (intent.amountRaw <= 0n) { record(t, d, "rejected: sell amount rounds to zero"); return; }
   }
-
-  if (rejected) {
-    console.log(`${line}  ✗ ${rejected}`);
-    logRun({ symbol: t.symbol, proposal: d.proposal, rejected, tier: BRAIN.tier, frameSha: d.frameSha });
-    recordDecision(t, d, `rejected: ${rejected}`, false);
-    return;
-  }
-
-  const intent: OrderIntent = {
-    side: d.proposal,
-    symbol: t.symbol,
-    token: t.address as Address,
-    fee: t.fee!,
-    decimals: t.decimals,
-    amount:
-      d.proposal === "BUY"
-        ? GUARD.orderEth
-        : Math.min(GUARD.orderEth / px, sellableQty),
-    priceEth: px,
-  };
-  if (d.proposal === "SELL" && LIVE) {
-    // authoritative raw sell amount: whole balance if it fits the order
-    // cap, else a bigint-safe fraction of it
-    const frac = Math.min(GUARD.orderEth / (sellableQty * px), 1);
-    intent.amountRaw =
-      frac >= 1
-        ? sellableRaw
-        : (sellableRaw * BigInt(Math.floor(frac * 1e9))) / 1_000_000_000n;
-  }
-
   if (!LIVE) {
+    // Paper uses the same-direction quote at the actual order size. It includes
+    // pool fees/impact, but does not claim simulated gas is real expenditure.
+    const amountIn = intent.side === "BUY" ? parseEther(intent.amount.toFixed(18)) : intent.amountRaw!;
+    const amountOut = intent.side === "BUY" ? await quoteBuyOut(t.address, t.fee, amountIn) : await quoteSellOut(t.address, t.fee, amountIn);
+    if (amountOut === null || amountOut <= 0n) { record(t, d, "rejected: no quote at order size"); return; }
     if (intent.side === "BUY") {
-      buyTotalEth += intent.amount;
-      paperEth -= intent.amount;
-      paperHoldings.set(
-        hkey(t),
-        (paperHoldings.get(hkey(t)) ?? 0) + intent.amount / px,
-      );
+      const spent = Number(formatEther(amountIn));
+      state.paperEth -= spent; state.buyTotalEth += spent;
+      state.holdings[key(t)] = quantity + Number(formatUnits(amountOut, t.decimals));
     } else {
-      paperHoldings.set(
-        hkey(t),
-        (paperHoldings.get(hkey(t)) ?? 0) - intent.amount,
-      );
-      paperEth += intent.amount * px;
-      sellTotalEth += intent.amount * px;
+      const proceeds = Number(formatEther(amountOut));
+      state.holdings[key(t)] = Math.max(0, quantity - Number(formatUnits(amountIn, t.decimals)));
+      state.paperEth += proceeds; state.sellTotalEth += proceeds;
     }
-    ordersTotal += 1;
-    saveState();
-    console.log(`${line}  ✓ PAPER FILL`);
-    logRun({ mode: "paper", tier: BRAIN.tier, frameSha: d.frameSha, ...intent });
-    recordDecision(t, d, "paper fill", true);
+    state.lastOrderAt = Date.now(); state.ordersTotal++; save();
+    console.log(`${line} PAPER FILL (order-size quote, gas excluded)`);
+    record(t, d, "paper fill", true);
     return;
   }
 
-  const hash = await placeLive(intent);
-  if (intent.side === "BUY") buyTotalEth += intent.amount;
-  else sellTotalEth += intent.amount * px;
-  ordersTotal += 1;
-  saveState();
-  recordDecision(t, d, `live ${hash}`, true);
-  console.log(`${line}  ✓ ${robinhoodChain.blockExplorers!.default.url}/tx/${hash}`);
-  logRun({ mode: "live", tier: BRAIN.tier, frameSha: d.frameSha, ...intent, hash });
+  state.pending = { id: randomUUID(), token: t.address, side: intent.side, createdAt: new Date().toISOString() };
+  state.lastOrderAt = Date.now(); save();
+  try {
+    const receipt = await placeLive(intent);
+    state.pending.hash = receipt.hash;
+    state.gasEth += Number(formatEther(receipt.gasWei));
+    if (intent.side === "BUY") {
+      state.buyTotalEth += Number(formatEther(receipt.amountInRaw));
+      state.holdings[key(t)] = quantity + Number(formatUnits(receipt.amountOutRaw, t.decimals));
+    } else {
+      state.sellTotalEth += Number(formatEther(receipt.amountOutRaw));
+      state.holdings[key(t)] = Math.max(0, quantity - Number(formatUnits(receipt.amountInRaw, t.decimals)));
+    }
+    state.ordersTotal++;
+    if (receipt.settlementComplete) state.pending = null;
+    else { status = "degraded"; lastError = "A confirmed swap needs settlement reconciliation; new orders are paused."; }
+    save(); record(t, d, `live ${receipt.hash}`, true);
+  } catch (error) {
+    // A broadcast may have succeeded even if the response was lost. Preserve
+    // intent and pause; never turn an unknown outcome into an automatic retry.
+    status = "degraded"; lastError = "An execution outcome needs reconciliation; new orders are paused.";
+    save(); record(t, d, "execution unresolved", true);
+    console.error(`execution paused: ${safeError(error)}`);
+  }
 }
 
 async function main() {
   if (PREFLIGHT) return preflight();
-  BRAIN = await createBrain();
-  console.log(`brain: ${BRAIN.label}`);
-  // boot heartbeat so the site's REAL SESSION panel goes live immediately
-  maybePublish(
-    {
-      tier: BRAIN.tier,
-      brainLabel: BRAIN.label,
-      startedAt,
-      obs: 0,
-      watching: watchlist.filter((w) => w.address).map((w) => w.symbol),
-      recent: [],
-    },
-    true,
-  );
-  console.log(
-    `trenchfly worker — ${LIVE ? "LIVE ORDERS" : "paper"} — chain ${robinhoodChain.id} — guard ${GUARD.orderEth} ETH/order, no daily cap`,
-  );
-  if (LIVE && !walletFromEnv()) {
-    console.error("--live needs FLY_PRIVATE_KEY in worker/.env");
-    process.exit(1);
-  }
-  let i = 0;
-  const MAX_WATCH = 14;
-  for (;;) {
-    // discovery pass once per full rotation: new WETH-paired pools join
-    // the rotation; oldest discovered pairs rotate out past MAX_WATCH.
-    if (i % Math.max(watchlist.length, 1) === 0) {
-      try {
-        const found = await scanNewPools();
-        for (const f of found) {
-          if (
-            watchlist.some(
-              (t) =>
-                t.address &&
-                t.address.toLowerCase() === f.address.toLowerCase(),
-            )
-          )
-            continue;
-          watchlist.push({
-            symbol: f.symbol,
-            venue: "new pair",
-            address: f.address,
-            history: [],
-          });
-          console.log(`🪰 new pair discovered: ${f.symbol} (${f.address})`);
-          logRun({ discovered: f });
-        }
-        while (watchlist.length > MAX_WATCH) {
-          const idx = watchlist.findIndex(
-            (t) =>
-              t.venue === "new pair" &&
-              (paperHoldings.get(hkey(t)) ?? 0) <= 0,
-          );
-          if (idx === -1) break; // never rotate out a held position
-          const [gone] = watchlist.splice(idx, 1);
-          console.log(`rotated out: ${gone.symbol}`);
-        }
-      } catch (e) {
-        console.error(`discovery: ${(e as Error).message}`);
+  const release = acquireWorkerLock(runs);
+  let heartbeat: ReturnType<typeof setInterval> | undefined;
+  const stop = () => { stopping = true; brain?.close(); wake?.(); };
+  process.once("SIGINT", stop); process.once("SIGTERM", stop);
+  try {
+    assertChain(await publicClient.getChainId(), robinhoodChain.id);
+    if (LIVE) {
+      liveAddress = walletFromEnv()?.account.address ?? null;
+      if (!liveAddress) throw new Error("Live wallet is unconfigured");
+    }
+    state = loadLedger(runs, mode, GUARD.capitalEth, liveAddress);
+    if (state.pending) throw new Error("Pending execution requires reconciliation before restart");
+    for (const [address, meta] of Object.entries(state.tokens)) if ((state.holdings[address] ?? 0) > 0 && !watchlist.some(t => key(t) === address)) watchlist.push({ ...meta, address: address as Address, venue: "saved position", history: [], lastQuoteAt: 0, status: "checking" });
+    save(); await publish(true);
+    heartbeat = setInterval(() => { void publish(); }, 30_000);
+    brain = await createBrain({ requireConnectome: LIVE || !process.argv.includes("--allow-proxy") });
+    if (stopping) return;
+    status = "warming"; await publish(true);
+    console.log(`RobinFly ${mode}; ${brain.label}; order cooldown ${GUARD.minIntervalMs / 1000}s`);
+    let i = 0;
+    while (!stopping && obsTotal < maxObservations) {
+      if (DISCOVER && i % watchlist.length === 0 && watchlist.length < 14) {
+        try { for (const found of await scanNewPools()) if (watchlist.length < 14 && !watchlist.some(t => key(t) === found.address.toLowerCase())) watchlist.push({ symbol: found.symbol, address: found.address as Address, venue: "discovered", history: [], lastQuoteAt: 0, status: "checking" }); }
+        catch (error) { if (rpcFailureStatus(error)) throw error; lastError = "Pool discovery is unavailable; configured markets remain active."; }
       }
+      const t = watchlist[i++ % watchlist.length];
+      try {
+        await observe(t);
+        if (state.pending) { stopping = true; fatal = true; }
+      } catch (error) {
+        if (stopping) break;
+        t.status = "error"; status = "degraded";
+        lastError = rpcFailureStatus(error) ? safeError(error) : "A market or brain observation failed. No order was inferred from the error.";
+        if (rpcFailureStatus(error)) { stopping = true; fatal = true; process.exitCode = 1; }
+        console.error(`${t.symbol}: ${safeError(error)}`);
+      }
+      if (stopping || obsTotal >= maxObservations) break;
+      await new Promise<void>(resolve => {
+        const timer = setTimeout(() => { wake = undefined; resolve(); }, Math.max(1000, 15_000 / watchlist.length));
+        wake = () => { clearTimeout(timer); wake = undefined; resolve(); };
+      });
     }
-    const t = watchlist[i % watchlist.length];
-    i += 1;
-    try {
-      await observe(t);
-    } catch (e) {
-      console.error(`${t.symbol}: ${(e as Error).message}`);
-    }
-    await new Promise((r) => setTimeout(r, GUARD.minIntervalMs / watchlist.length));
+  } catch (error) {
+    fatal = true; status = "degraded"; lastError = rpcFailureStatus(error) ? safeError(error) : "Worker startup or persistence failed; observation is paused.";
+    console.error(safeError(error));
+    process.exitCode = 1;
+  } finally {
+    if (heartbeat) clearInterval(heartbeat);
+    brain?.close();
+    if (!fatal) { status = "stopped"; lastError = null; }
+    await publish(true); await flushFeed();
+    process.removeListener("SIGINT", stop); process.removeListener("SIGTERM", stop);
+    release();
   }
 }
 
-main();
+void main().catch(error => { console.error(safeError(error)); process.exitCode = 1; });

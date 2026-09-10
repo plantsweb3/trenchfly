@@ -11,13 +11,19 @@ export default function FlyMascot({
   className = "",
   reaction = null,
   eager = false,
+  reactionKey = "",
+  motion = true,
 }: {
   className?: string;
   reaction?: Reaction;
   eager?: boolean;
+  reactionKey?: string;
+  motion?: boolean;
 }) {
   const mount = useRef<HTMLDivElement>(null);
   const play = useRef<(name: string) => void>(() => {});
+  const motionRef = useRef(motion);
+  const syncMotion = useRef<() => void>(() => {});
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -40,7 +46,7 @@ export default function FlyMascot({
 
     const frame = (now: number) => {
       raf = 0;
-      if (disposed || !visible || document.hidden || media.matches) return;
+      if (disposed || !visible || document.hidden || media.matches || !motionRef.current) return;
       if (!last || now - last >= 1000 / 30) {
         mixer?.update(last ? Math.min((now - last) / 1000, 0.1) : 0);
         last = now;
@@ -52,9 +58,13 @@ export default function FlyMascot({
       cancelAnimationFrame(raf);
       raf = 0;
       last = 0;
-      if (media.matches) { draw(); return; }
+      if (media.matches || !motionRef.current) {
+        if (!motionRef.current && mixer && idle) { mixer.stopAllAction(); idle.reset().play(); active = idle; mixer.update(0); }
+        draw(); return;
+      }
       if (renderer && visible && !document.hidden && !disposed) raf = requestAnimationFrame(frame);
     };
+    syncMotion.current = sync;
     const releaseModel = (root: Group) => {
       root.traverse((obj) => {
         const mesh = obj as Mesh;
@@ -108,7 +118,7 @@ export default function FlyMascot({
           draw();
         });
         resize.observe(host);
-        const gltf = await new GLTFLoader().loadAsync("/models/trenchfly/trenchfly.glb");
+        const gltf = await new GLTFLoader().loadAsync("/models/robinfly/robinfly.glb");
         if (disposed) { releaseModel(gltf.scene); return; }
         model = gltf.scene;
         scene.add(model);
@@ -139,7 +149,7 @@ export default function FlyMascot({
         sync();
       } catch (error) {
         // The rendered Blender poster remains visible if WebGL/model loading fails.
-        console.warn("TrenchFly mascot: using still-image fallback", error);
+        console.warn("RobinFly mascot: using still-image fallback", error);
         resize?.disconnect();
         renderer?.dispose();
         renderer?.domElement.remove();
@@ -158,6 +168,7 @@ export default function FlyMascot({
     return () => {
       disposed = true;
       play.current = () => {};
+      syncMotion.current = () => {};
       cancelAnimationFrame(raf);
       observer.disconnect(); resize?.disconnect();
       media.removeEventListener("change", preference);
@@ -169,23 +180,28 @@ export default function FlyMascot({
   }, []);
 
   useEffect(() => {
-    if (reaction) play.current(reaction === "BUY" ? "BuyReact" : "SellReact");
-  }, [reaction]);
+    motionRef.current = motion;
+    syncMotion.current();
+  }, [motion]);
+
+  useEffect(() => {
+    if (ready && motion && reaction) play.current(reaction === "BUY" ? "BuyReact" : "SellReact");
+  }, [reaction, reactionKey, ready, motion]);
 
   return (
     <div
       ref={mount}
       className={className}
       role="img"
-      aria-label="Low-poly TrenchFly mascot with lime wings and red compound eyes"
+      aria-label="Low-poly RobinFly mascot with lime wings and red compound eyes"
       style={{ position: "relative", aspectRatio: "6 / 5", isolation: "isolate", overflow: "hidden" }}
     >
       <Image
-        src="/models/trenchfly/fly-transparent.png"
+        src="/models/robinfly/fly-transparent.png"
         alt=""
         loading={eager ? "eager" : "lazy"}
         fill
-        sizes="(max-width: 640px) 70vw, 330px"
+        sizes="(max-width: 640px) 100vw, (max-width: 1440px) 55vw, 700px"
         style={{ objectFit: "contain", opacity: ready ? 0 : 1 }}
       />
     </div>

@@ -337,3 +337,6 @@ body::after {
   width: max-content;
   animation: tickerScroll 30s linear infinite;
 }
+
+/* The launch design uses clean surfaces for readable telemetry. */
+body::after { display: none; }

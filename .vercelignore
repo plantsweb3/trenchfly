@@ -1,0 +1,10 @@
+
+# Deploy the observation website only.
+brain/
+worker/
+.feed-worktree/
+.env*
+*.blend
+*.blend1
+*.pem
+*.key

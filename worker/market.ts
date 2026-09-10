@@ -13,10 +13,12 @@ import {
   type Address,
 } from "viem";
 import { CONTRACTS, FEE_TIERS, robinhoodChain } from "./config";
+import { rpcUrl } from "./rpc";
+import { isUnavailableRoute } from "../lib/rpc-config";
 
 export const publicClient = createPublicClient({
   chain: robinhoodChain,
-  transport: http(),
+  transport: http(rpcUrl(), { timeout: 12_000, retryCount: 0 }),
 });
 
 const quoterAbi = parseAbi([
@@ -65,8 +67,9 @@ async function quoteSingle(
       ],
     });
     return result[0] > 0n ? result[0] : null;
-  } catch {
-    return null;
+  } catch (error) {
+    if (isUnavailableRoute(error)) return null;
+    throw error;
   }
 }
 

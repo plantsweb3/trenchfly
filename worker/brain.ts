@@ -40,6 +40,7 @@ export interface BrainIface {
   tier: 1 | 2;
   label: string;
   decide(symbol: string, history: number[], price: number, key?: string): Promise<Decision>;
+  close(): void;
 }
 
 function propose(rateL: number, rateR: number, gate: boolean): Decision {
@@ -78,7 +79,7 @@ function tier1Decide(history: number[]): Decision {
 
 /* ---------------- tier-2 connectome client ---------------- */
 
-class Tier2Client {
+export class Tier2Client {
   proc: ChildProcessWithoutNullStreams;
   private rl: Interface;
   private pending = new Map<
@@ -90,7 +91,10 @@ class Tier2Client {
   ready: Promise<{ neurons: number; synapses: number }>;
 
   constructor(python: string, script: string) {
-    this.proc = spawn(python, [script], { cwd: BRAIN_DIR });
+    const env = { ...process.env };
+    delete env.FLY_PRIVATE_KEY;
+    delete env.ROBINFLY_RPC_URL;
+    this.proc = spawn(python, [script], { cwd: BRAIN_DIR, env });
     this.rl = createInterface({ input: this.proc.stdout });
     let readyResolve!: (v: { neurons: number; synapses: number }) => void;
     let readyReject!: (e: Error) => void;
@@ -123,9 +127,18 @@ class Tier2Client {
       for (const [, w] of this.pending) w.reject(this.dead);
       this.pending.clear();
     };
+    this.proc.on("error", (error) => fail(`brain process: ${error.message}`));
     this.proc.on("exit", (code) => fail(`brain exited (${code})`));
     this.proc.stdin.on("error", (e) => fail(`brain stdin: ${e.message}`));
     this.proc.stderr.on("data", () => {}); // numpy chatter
+  }
+
+  close(): void {
+    this.dead = new Error("brain closed");
+    for (const waiter of this.pending.values()) waiter.reject(this.dead);
+    this.pending.clear();
+    this.rl.close();
+    this.proc.kill("SIGTERM");
   }
 
   request(
@@ -138,6 +151,7 @@ class Tier2Client {
       const timer = setTimeout(() => {
         this.pending.delete(id);
         reject(new Error("brain timeout"));
+        this.close();
       }, timeoutMs);
       this.pending.set(id, {
         resolve: (j) => {
@@ -162,7 +176,7 @@ class Tier2Client {
 
 /* ---------------- factory ---------------- */
 
-export async function createBrain(): Promise<BrainIface> {
+export async function createBrain({ requireConnectome = true }: { requireConnectome?: boolean } = {}): Promise<BrainIface> {
   const python = join(BRAIN_DIR, ".venv", "bin", "python");
   const script = join(BRAIN_DIR, "serve.py");
   const artifacts = ["graph.npz", "populations.json", "calibration.json"];
@@ -170,9 +184,11 @@ export async function createBrain(): Promise<BrainIface> {
     existsSync(python) &&
     artifacts.every((f) => existsSync(join(BRAIN_DIR, f)));
 
+  let client: Tier2Client | undefined;
   if (haveAll) {
     try {
-      const client = new Tier2Client(python, script);
+      client = new Tier2Client(python, script);
+      const kernel = client;
       let bootTimer: NodeJS.Timeout | undefined;
       const info = await Promise.race([
         client.ready,
@@ -191,9 +207,10 @@ export async function createBrain(): Promise<BrainIface> {
       const emaBySymbol = new Map<string, number>();
       return {
         tier: 2,
+        close: () => kernel.close(),
         label: `tier-2 connectome (${info.neurons.toLocaleString()} neurons, ${info.synapses.toLocaleString()} synapses)`,
         async decide(symbol, history, price, key) {
-          const j = (await client.request({
+          const j = (await kernel.request({
             symbol,
             prices: history.slice(-100),
             bid: price * 0.9985,
@@ -207,6 +224,7 @@ export async function createBrain(): Promise<BrainIface> {
             error?: string;
           };
           if (j.error) throw new Error(`brain: ${j.error}`);
+          if (![j.rateL, j.rateR, j.dnpe017_spikes].every(v => typeof v === "number" && Number.isFinite(v) && v >= 0)) throw new Error("brain returned invalid spike rates");
           const raw = j.rateR - j.rateL;
           const k = (key ?? symbol).toLowerCase();
           const prev = emaBySymbol.get(k);
@@ -228,20 +246,15 @@ export async function createBrain(): Promise<BrainIface> {
         },
       };
     } catch (e) {
-      console.error(
-        `tier-2 boot failed (${(e as Error).message}) — falling back to tier-1 proxy`,
-      );
-      try {
-        // never leak a multi-GB orphan kernel
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (globalThis as any).__lastBrainProc?.kill?.();
-      } catch {
-        /* already gone */
-      }
+      client?.close();
+      if (requireConnectome) throw new Error(`Connectome unavailable: ${(e as Error).message}`);
+      console.error(`tier-2 boot failed (${(e as Error).message}); explicitly allowed proxy selected`);
     }
   }
+  if (requireConnectome) throw new Error("Connectome artifacts are missing; proxy fallback is disabled.");
   return {
     tier: 1,
+    close() {},
     label: "tier-1 decoder proxy (connectome artifacts missing)",
     async decide(_symbol, history) {
       return tier1Decide(history);
