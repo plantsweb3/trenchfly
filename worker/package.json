@@ -1,0 +1,21 @@
+{
+  "name": "trenchfly-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "wallet:new": "tsx wallet.ts",
+    "preflight": "tsx index.ts --preflight",
+    "paper": "tsx index.ts",
+    "live": "tsx index.ts --live",
+    "withdraw": "tsx withdraw.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  }
+}

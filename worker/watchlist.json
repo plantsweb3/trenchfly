@@ -1,0 +1,10 @@
+{
+  "_note": "Canonical CAs picked by dominant DexScreener liquidity on chainId 'robinhood' (2026-09-10): CASHCAT $5M+, GOOSE $8.1M, CHUMP $4.6M, AI $10.2M. Impostor tickers with lower liquidity exist for CHUMP/GOOSE — verify on robinhoodchain.blockscout.com before going --live.",
+  "tokens": [
+    { "symbol": "CASHCAT", "venue": "Pons", "address": "0x020bfC650A365f8BB26819deAAbF3E21291018b4" },
+    { "symbol": "GOOSE", "venue": "Pons", "address": "0x348cC963411FB82CD6e0B64345714fEC94F242CB" },
+    { "symbol": "CHUMP", "venue": "Pons", "address": "0xEc0acde3cF4c5f98ce2C021e6Bd6eC475fEe278a" },
+    { "symbol": "AI", "venue": "long.xyz", "address": "0x2E8c31162b855A2ffa90F6F8634643Ad6F111e18" },
+    { "symbol": "O1BOT", "venue": "o1", "address": "0xF7d77243Fbd0413a6528edc275b09D31c25CB201" }
+  ]
+}
