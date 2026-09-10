@@ -16,6 +16,7 @@ import {
 import ArborPanel from "./ArborPanel";
 import FlySvg from "./FlySvg";
 import WalletPanel from "./WalletPanel";
+import RealSession from "./RealSession";
 import { useBuzz } from "./useBuzz";
 import { FLY_WALLET, ROBINHOOD_CHAIN } from "@/lib/chain";
 
@@ -158,6 +159,8 @@ export default function Terminal() {
           </div>
 
           <WalletPanel />
+
+          <RealSession />
 
           <div className="panel px-3 py-2 text-[10px] leading-relaxed text-ink-dim">
             Dopamine cells wired to unrealized P&amp;L. The fly has no idea any

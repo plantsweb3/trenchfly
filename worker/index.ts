@@ -18,6 +18,7 @@ import {
 } from "./market";
 import { logRun, placeLive, walletFromEnv, type OrderIntent } from "./execute";
 import { scanNewPools } from "./discovery";
+import { maybePublish, type FeedDecision } from "./feed";
 
 const dir = dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: join(dir, ".env") });
@@ -41,7 +42,42 @@ const watchlist: WatchToken[] = JSON.parse(
 ).tokens.map((t: Omit<WatchToken, "history">) => ({ ...t, history: [] }));
 
 let ordersTotal = 0;
+let obsTotal = 0;
+const startedAt = new Date().toISOString();
+const recentDecisions: FeedDecision[] = [];
 let paperEth = GUARD.capitalEth;
+
+function recordDecision(
+  t: WatchToken,
+  d: { proposal: string; rateL: number; rateR: number; diff: number; gate: boolean; frameSha?: string },
+  result: string,
+  urgent: boolean,
+) {
+  obsTotal += 1;
+  recentDecisions.push({
+    t: new Date().toISOString(),
+    symbol: t.symbol,
+    proposal: d.proposal,
+    rateL: Math.round(d.rateL * 10) / 10,
+    rateR: Math.round(d.rateR * 10) / 10,
+    dev: Math.round(d.diff * 100) / 100,
+    gate: d.gate,
+    frameSha: d.frameSha,
+    result,
+  });
+  if (recentDecisions.length > 40) recentDecisions.shift();
+  maybePublish(
+    {
+      tier: BRAIN.tier,
+      brainLabel: BRAIN.label,
+      startedAt,
+      obs: obsTotal,
+      watching: watchlist.filter((w) => w.address).map((w) => w.symbol),
+      recent: recentDecisions,
+    },
+    urgent,
+  );
+}
 const paperHoldings = new Map<string, number>();
 
 // Creator rewards / deposits flow into this wallet, so drawdown is measured
@@ -116,6 +152,7 @@ async function observe(t: WatchToken): Promise<void> {
 
   if (d.proposal === "HOLD") {
     console.log(line);
+    recordDecision(t, d, "hold", false);
     return;
   }
 
@@ -157,6 +194,7 @@ async function observe(t: WatchToken): Promise<void> {
   if (rejected) {
     console.log(`${line}  ✗ ${rejected}`);
     logRun({ symbol: t.symbol, proposal: d.proposal, rejected, tier: BRAIN.tier, frameSha: d.frameSha });
+    recordDecision(t, d, `rejected: ${rejected}`, false);
     return;
   }
 
@@ -193,11 +231,13 @@ async function observe(t: WatchToken): Promise<void> {
     ordersTotal += 1;
     console.log(`${line}  ✓ PAPER FILL`);
     logRun({ mode: "paper", tier: BRAIN.tier, frameSha: d.frameSha, ...intent });
+    recordDecision(t, d, "paper fill", true);
     return;
   }
 
   const hash = await placeLive(intent);
   ordersTotal += 1;
+  recordDecision(t, d, `live ${hash}`, true);
   console.log(`${line}  ✓ ${robinhoodChain.blockExplorers!.default.url}/tx/${hash}`);
   logRun({ mode: "live", tier: BRAIN.tier, frameSha: d.frameSha, ...intent, hash });
 }

@@ -11,7 +11,7 @@ const TAPE = [
   "O1BOT/ETH $0.002150",
   "CHAIN 4663 · GAS ETH",
   "DNp20 Δ +2.1 Hz",
-  "KC→MBON 7,835 PLASTIC EDGES",
+  "KC→MBON PLASTICITY: IN BUILD",
   "GUARD ARMED",
 ];
 
@@ -42,7 +42,7 @@ const STEPS = [
   {
     n: "02",
     title: "THE BRAIN RUNS",
-    body: "The full retained MaleCNS v1.0 connectome: 166,700 neurons, 25.6 million directed connections, 124 million synaptic contacts, integrated at 0.1 ms. None of it evolved for this. All of it is being used for this.",
+    body: "The full retained MaleCNS v1.0 connectome: 166,700 neurons, 25.1 million compiled synapses, SHA-256 pinned, integrated at 0.1 ms. None of it evolved for this. All of it is being used for this.",
   },
   {
     n: "03",
@@ -52,7 +52,7 @@ const STEPS = [
   {
     n: "04",
     title: "PROFIT IS DOPAMINE",
-    body: "Equity up ≥ $0.01 pulses 15 PAM11 dopamine cells. Down ≥ $0.01 pulses 2 PPL101 aversive cells. 7,835 KC→MBON synapses drift in response. That is the entire coaching staff.",
+    body: "Equity up ≥ $0.01 pulses 15 PAM11 dopamine cells. Down ≥ $0.01 pulses 2 PPL101 aversive cells. KC→MBON plasticity is next on the public checklist — until it ships, the fly does not learn. It just vibes on anatomy.",
   },
 ];
 
@@ -63,6 +63,10 @@ const RULES = [
   [
     "DRAWDOWN",
     "A $20 drawdown stops new orders. It does not liquidate holdings — the fly rides the bag down like everyone else.",
+  ],
+  [
+    "INVENTORY",
+    "Creator rewards pile up in the wallet, but the fly can never hold more than ~5 order-sizes of tokens at once. The pile is not the fly's to spend.",
   ],
   ["LEVERAGE", "None. No shorts, no margin, no transfer scope on the key."],
 ];
