@@ -1,0 +1,8 @@
+{
+  "edges_total": 151856684,
+  "edges_dropped_unretained": 126273746,
+  "edges_exc": 14745137,
+  "edges_inh": 9813998,
+  "edges_mod": 435541,
+  "edges_fallback": 588262
+}

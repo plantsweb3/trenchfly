@@ -11,6 +11,8 @@ the observation window; >= +2 Hz with a DNpe017 spike proposes buy,
 from these numbers so the mapping lives in one audited place.
 """
 
+from __future__ import annotations
+
 import base64
 import hashlib
 import io

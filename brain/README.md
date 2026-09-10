@@ -24,8 +24,17 @@ anyone can rebuild the identical brain.
 - [x] `sensory.py` — 320×180 chart RGB → photoreceptor drive (v1:
       luminance → R1–R6, blue/green proxy → R7/R8 axon bodies)
 - [x] `serve.py` — JSON-over-stdio loop the TS worker calls
-- [ ] Graph compiled from the full 1.1 GB weights file (download + build)
-- [ ] Physiology calibration pass (resting rates sane, no seizure/silence)
+- [x] Graph compiled from the full 1.1 GB weights file: 151.9M raw edges
+      → 25,147,397 retained fast synapses (14.7M exc / 9.8M inh /
+      588k damped-fallback) + 435k modulatory, `graph-meta.json`
+- [x] Kernel loads and runs the full brain (166,700 neurons; ~2.2 s wall
+      per 100 ms neural — fits the 60 s market cadence). Silent at rest
+      (no seizure); all 3,377 R1–R6 spike under drive
+- [ ] Physiology calibration pass. First finding, kept honest:
+      photoreceptors are histaminergic (inhibitory), so a static bright
+      frame suppresses the lamina instead of driving deep circuits —
+      DNp20/KC stay silent. Needs contrast/transient coding and/or a
+      declared lamina bias before the decoder sees anything
 - [ ] DNp20 decoder validated end-to-end against logged frames
 - [ ] Worker `brain.ts` switched from tier-1 proxy to this kernel
 - [ ] Dopamine reinforcement (PAM11/PPL101 pulses, KC→MBON plasticity)

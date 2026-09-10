@@ -7,6 +7,8 @@ in v1 (no per-edge delay yet). Unvalidated until the calibration pass
 in the README checklist is checked off.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import numpy as np
