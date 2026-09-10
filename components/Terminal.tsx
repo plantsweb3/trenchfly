@@ -13,7 +13,6 @@ import {
   type Ticker,
   type Trade,
 } from "@/lib/sim";
-import NeuralActivity from "./NeuralActivity";
 import ArborPanel from "./ArborPanel";
 import FlySvg from "./FlySvg";
 import WalletPanel from "./WalletPanel";
@@ -94,8 +93,6 @@ export default function Terminal() {
   }
 
   const activity = Math.min((sim.rateL + sim.rateR) / 30, 1);
-  const drive =
-    sim.pamPulse > 0 ? 0.85 : sim.pplPulse > 0 ? 0.15 : 0.35 + activity * 0.3;
 
   return (
     <section id="terminal" className="relative mx-auto max-w-7xl px-4 pb-24 pt-10">
@@ -132,7 +129,6 @@ export default function Terminal() {
               ambient: activity,
             }}
           />
-          <NeuralActivity drive={drive} />
 
           <div className="panel corner">
             <div className="panel-title">
@@ -610,6 +606,21 @@ function HoldingRow({ sim, ticker }: { sim: SimState; ticker: Ticker }) {
 
 /* ================= trade log ================= */
 
+type LogRow = Trade & { repeat?: number };
+
+function collapseRows(trades: Trade[]): LogRow[] {
+  const out: LogRow[] = [];
+  for (const tr of trades) {
+    const prev = out[out.length - 1];
+    if (prev?.rejected && tr.rejected && prev.rejected === tr.rejected) {
+      prev.repeat = (prev.repeat ?? 1) + 1;
+      continue;
+    }
+    out.push({ ...tr });
+  }
+  return out;
+}
+
 function TradeLog({
   sim,
   onchain,
@@ -617,7 +628,7 @@ function TradeLog({
   sim: SimState;
   onchain: OnchainTx[];
 }) {
-  const rows = [...sim.trades].reverse();
+  const rows = collapseRows([...sim.trades].reverse());
   return (
     <div className="panel corner flex min-h-[420px] flex-col lg:max-h-[840px]">
       <div className="panel-title">
@@ -719,7 +730,7 @@ function TradeButton({
   );
 }
 
-function TradeRow({ tr }: { tr: Trade }) {
+function TradeRow({ tr }: { tr: LogRow }) {
   const rejected = tr.rejected !== null;
   const color = rejected
     ? "var(--amber)"
@@ -745,7 +756,14 @@ function TradeRow({ tr }: { tr: Trade }) {
         </span>
       </div>
       {rejected ? (
-        <div className="mt-1 text-[9px] text-amber/80">guard: {tr.rejected}</div>
+        <div className="mt-1 text-[9px] text-amber/80">
+          guard: {tr.rejected}
+          {(tr.repeat ?? 1) > 1 && (
+            <span className="ml-2 border border-amber/40 px-1 text-amber">
+              ×{tr.repeat}
+            </span>
+          )}
+        </div>
       ) : (
         <div className="mt-1 text-[9px] text-ink-faint">
           {tr.qty >= 1000

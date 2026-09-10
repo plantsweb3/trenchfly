@@ -137,9 +137,9 @@ export default function ArborPanel({ drive }: { drive: ArborDrive }) {
   return (
     <div className="panel corner">
       <div className="panel-title">
-        <strong>MEASURED FIRING</strong>
+        <strong>CNS</strong>
         <span>/</span>
-        <span>27 ARBORS</span>
+        <span>MEASURED FIRING · 27 ARBORS</span>
       </div>
       <canvas
         ref={ref}

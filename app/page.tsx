@@ -90,6 +90,103 @@ export default function Home() {
 
       <Terminal />
 
+      {/* verify */}
+      <section id="verify" className="border-t border-line">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <Reveal>
+            <h2
+              className="text-2xl text-ink sm:text-3xl"
+              style={{ fontFamily: "var(--font-pixel)" }}
+            >
+              DON&apos;T TRUST THE <span className="text-lime">FLY</span>
+            </h2>
+            <p
+              className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-dim"
+              style={{ fontFamily: "var(--font-plex-sans)" }}
+            >
+              Verify it. Every claim on this page maps to something you can
+              check yourself. Status is updated as each layer ships — nothing
+              here is marked done before it is.
+            </p>
+          </Reveal>
+          <div className="mt-8 divide-y divide-line border border-line">
+            {[
+              {
+                k: "FLY WALLET",
+                status: "LIVE",
+                color: "var(--green)",
+                body: "One public EVM wallet on chain 4663. Every order it ever signs is permanently visible.",
+                href: FLY_WALLET
+                  ? `${ROBINHOOD_CHAIN.explorer}/address/${FLY_WALLET}`
+                  : ROBINHOOD_CHAIN.explorer,
+                link: FLY_WALLET
+                  ? `${FLY_WALLET.slice(0, 6)}…${FLY_WALLET.slice(-4)} on Blockscout ↗`
+                  : "Blockscout ↗",
+              },
+              {
+                k: "OPEN SOURCE",
+                status: "LIVE",
+                color: "var(--green)",
+                body: "The site, the execution worker, the guard, the decision layer — all public. Read what actually runs.",
+                href: "https://github.com/plantsweb3/trenchfly",
+                link: "github.com/plantsweb3/trenchfly ↗",
+              },
+              {
+                k: "ONCHAIN EXECUTION",
+                status: "PAPER",
+                color: "var(--amber)",
+                body: "The worker quotes real Uniswap v3 pools and runs the full decision loop in paper mode. It flips live after the paper session passes; from then on the trade log above is transactions, not simulation.",
+                href: "https://github.com/plantsweb3/trenchfly/tree/main/worker",
+                link: "worker source ↗",
+              },
+              {
+                k: "CONNECTOME KERNEL",
+                status: "LIVE",
+                color: "var(--green)",
+                body: "The full 166,700-neuron, 25.1M-synapse spiking simulation (MaleCNS v1.0, SHA-256 pinned) now proposes every worker decision — chart pixels → photoreceptors → DNp20 spikes, with each observation's exact frame hashed and logged. Known limits (no retinotopy yet, deviation decode) are documented in the repo, not hidden.",
+                href: "https://github.com/plantsweb3/trenchfly/tree/main/brain",
+                link: "brain source + checklist ↗",
+              },
+            ].map((r) => (
+              <div
+                key={r.k}
+                className="grid gap-2 px-4 py-4 sm:grid-cols-[170px_70px_1fr_auto] sm:items-baseline sm:gap-6"
+              >
+                <span className="text-[10px] font-bold tracking-[0.25em] text-ink">
+                  {r.k}
+                </span>
+                <span
+                  className="text-[10px] font-bold tracking-[0.2em]"
+                  style={{ color: r.color }}
+                >
+                  {r.status}
+                </span>
+                <span
+                  className="text-sm text-ink-dim"
+                  style={{ fontFamily: "var(--font-plex-sans)" }}
+                >
+                  {r.body}
+                </span>
+                <a
+                  href={r.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-lime underline decoration-lime/40 underline-offset-2 hover:decoration-lime"
+                >
+                  {r.link}
+                </a>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-[10px] leading-relaxed text-ink-faint">
+            The terminal above is a labeled paper simulation until execution
+            goes live. When it flips, this page will say so. Fabricated
+            receipts are for other coins.
+          </p>
+        </div>
+      </section>
+
+
       {/* how it works */}
       <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-20">
@@ -215,102 +312,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* verify */}
-      <section id="verify" className="border-t border-line">
-        <div className="mx-auto max-w-6xl px-4 py-20">
-          <Reveal>
-            <h2
-              className="text-2xl text-ink sm:text-3xl"
-              style={{ fontFamily: "var(--font-pixel)" }}
-            >
-              DON&apos;T TRUST THE <span className="text-lime">FLY</span>
-            </h2>
-            <p
-              className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-dim"
-              style={{ fontFamily: "var(--font-plex-sans)" }}
-            >
-              Verify it. Every claim on this page maps to something you can
-              check yourself. Status is updated as each layer ships — nothing
-              here is marked done before it is.
-            </p>
-          </Reveal>
-          <div className="mt-8 divide-y divide-line border border-line">
-            {[
-              {
-                k: "FLY WALLET",
-                status: "LIVE",
-                color: "var(--green)",
-                body: "One public EVM wallet on chain 4663. Every order it ever signs is permanently visible.",
-                href: FLY_WALLET
-                  ? `${ROBINHOOD_CHAIN.explorer}/address/${FLY_WALLET}`
-                  : ROBINHOOD_CHAIN.explorer,
-                link: FLY_WALLET
-                  ? `${FLY_WALLET.slice(0, 6)}…${FLY_WALLET.slice(-4)} on Blockscout ↗`
-                  : "Blockscout ↗",
-              },
-              {
-                k: "OPEN SOURCE",
-                status: "LIVE",
-                color: "var(--green)",
-                body: "The site, the execution worker, the guard, the decision layer — all public. Read what actually runs.",
-                href: "https://github.com/plantsweb3/trenchfly",
-                link: "github.com/plantsweb3/trenchfly ↗",
-              },
-              {
-                k: "ONCHAIN EXECUTION",
-                status: "PAPER",
-                color: "var(--amber)",
-                body: "The worker quotes real Uniswap v3 pools and runs the full decision loop in paper mode. It flips live after the paper session passes; from then on the trade log above is transactions, not simulation.",
-                href: "https://github.com/plantsweb3/trenchfly/tree/main/worker",
-                link: "worker source ↗",
-              },
-              {
-                k: "CONNECTOME KERNEL",
-                status: "LIVE",
-                color: "var(--green)",
-                body: "The full 166,700-neuron, 25.1M-synapse spiking simulation (MaleCNS v1.0, SHA-256 pinned) now proposes every worker decision — chart pixels → photoreceptors → DNp20 spikes, with each observation's exact frame hashed and logged. Known limits (no retinotopy yet, deviation decode) are documented in the repo, not hidden.",
-                href: "https://github.com/plantsweb3/trenchfly/tree/main/brain",
-                link: "brain source + checklist ↗",
-              },
-            ].map((r) => (
-              <div
-                key={r.k}
-                className="grid gap-2 px-4 py-4 sm:grid-cols-[170px_70px_1fr_auto] sm:items-baseline sm:gap-6"
-              >
-                <span className="text-[10px] font-bold tracking-[0.25em] text-ink">
-                  {r.k}
-                </span>
-                <span
-                  className="text-[10px] font-bold tracking-[0.2em]"
-                  style={{ color: r.color }}
-                >
-                  {r.status}
-                </span>
-                <span
-                  className="text-sm text-ink-dim"
-                  style={{ fontFamily: "var(--font-plex-sans)" }}
-                >
-                  {r.body}
-                </span>
-                <a
-                  href={r.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] text-lime underline decoration-lime/40 underline-offset-2 hover:decoration-lime"
-                >
-                  {r.link}
-                </a>
-              </div>
-            ))}
-          </div>
-          <p className="mt-4 text-[10px] leading-relaxed text-ink-faint">
-            The terminal above is a labeled paper simulation until execution
-            goes live. When it flips, this page will say so. Fabricated
-            receipts are for other coins.
-          </p>
         </div>
       </section>
 
