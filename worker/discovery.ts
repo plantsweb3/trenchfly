@@ -1,6 +1,6 @@
 /** One declared venue: canonical Uniswap v3 WETH pools on chain 4663. */
 import { parseAbi, parseAbiItem, formatUnits, formatEther, type Address } from "viem";
-import { CONTRACTS } from "./config";
+import { CONTRACTS, TOKEN_DENYLIST } from "./config";
 import { publicClient } from "./market";
 import { appendSwaps, commitDiscovery, addr, type Candidate, type MarketStore, type Swap } from "./pipeline";
 const poolCreated=parseAbiItem("event PoolCreated(address indexed token0,address indexed token1,uint24 indexed fee,int24 tickSpacing,address pool)");
@@ -34,6 +34,7 @@ export async function scanNewPools(s:MarketStore, initialLookback=2000n):Promise
     const {token0,token1,fee,pool}=l.args;
     const token=addr(token0)===addr(CONTRACTS.weth)?token1:addr(token1)===addr(CONTRACTS.weth)?token0:null;
     if(!token)continue;
+    if(TOKEN_DENYLIST.has(addr(token)))continue; // never trade our own token
     const b=await getBlock(l.blockNumber);if(b.hash!==l.blockHash)throw new Error("Chain history changed during discovery read");
     found.push({pool:addr(pool),token:addr(token),token0:addr(token0),fee,block:String(l.blockNumber),blockHash:l.blockHash,tx:l.transactionHash,logIndex:l.logIndex,createdAt:Number(b.timestamp)*1000,discoveredAt:Date.now(),activeSince:0,lastSelectedAt:0,lastSampledAt:0,swapCursor:null,swapHash:null,swapThroughAt:null,swaps:[],quotes:[],liquidityRaw:null,poolWeth:null,poolToken:null,statsAt:null,status:"queued",error:null});
   }

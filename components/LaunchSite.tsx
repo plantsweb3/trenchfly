@@ -1,6 +1,6 @@
 "use client";
 import MarketRadar from "./MarketRadar";
-import { SOCIAL_HANDLE, SOCIAL_URL } from "@/lib/site";
+import { SOCIAL_HANDLE, SOCIAL_URL, TOKEN } from "@/lib/site";
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
@@ -188,11 +188,23 @@ const QUESTIONS = [
   { q: "Is this a real fly brain?", a: "It is a computational model built from a mapped fruit-fly connectome. It is not a living fly, and a wiring map is not a complete recreation of a biological brain. The public session identifies whether the worker reports the connectome kernel or the simpler proxy decoder." },
   { q: "Is it trading real money right now?", a: "Check the session panel — the worker publishes its execution mode with every update, and this page repeats that label rather than claiming one. In paper mode, fills are simulated and no real orders are sent. In live mode, fills carry transaction references you can verify on the block explorer." },
   { q: "Can I trade through this page?", a: "This is an observation page, not a trading terminal or custody service. It does not connect to your wallet or place orders for you. The worker operates separately under its configured execution limits." },
+  { q: "Is there a token?", a: "Yes — RHFLY, and the only official contract address is the one printed on this page. Anything else named RobinFly is not RobinFly. Holding it is not required for anything here and confers no claim on the experiment's wallet. The worker denylists its own token, so the fly never trades RHFLY." },
   { q: "Does the fly learn to make money?", a: "Profitable learning has not been demonstrated. Dopamine-driven reinforcement is still in development. The experiment exposes what happened so that claims can be checked against the code and public record." },
 ];
 
 export default function LaunchSite() {
   const session = usePublicResource("/api/feed", normalizeSession);
+  const [tokenCopied, setTokenCopied] = useState(false);
+  const tokenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (tokenTimer.current) clearTimeout(tokenTimer.current); }, []);
+  async function copyTokenAddress() {
+    try {
+      await navigator.clipboard.writeText(TOKEN.address);
+      setTokenCopied(true);
+      if (tokenTimer.current) clearTimeout(tokenTimer.current);
+      tokenTimer.current = setTimeout(() => setTokenCopied(false), 2500);
+    } catch { /* selection fallback: the address is selectable text */ }
+  }
   const [now, setNow] = useState(0);
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 15_000); return () => clearInterval(id); }, []);
   const currentTime = Math.max(now, session.checkedAt ?? 0);
@@ -225,6 +237,11 @@ export default function LaunchSite() {
       <div className={s.bodyContainer}>
         <SessionPanel resource={session} now={currentTime} />
         <WalletRecord now={currentTime} />
+        <div className={s.guardBand} id="token">
+          <div><span className={s.eyebrow}>THE TOKEN · VERIFIED CONTRACT</span><h3>RobinFly. RHFLY.</h3></div>
+          <p><code>{TOKEN.address}</code> <button onClick={copyTokenAddress} className={s.copyButton} aria-label="Copy RHFLY contract address">{tokenCopied ? "Copied" : "Copy"}</button><br />The only official contract address. Anything else named RobinFly is not RobinFly. Holding RHFLY is not required for anything here and confers no claim on the experiment&apos;s wallet — and the worker denylists its own token, so the fly never trades it.</p>
+          <External href={`${EXPLORER}/token/${TOKEN.address}`} className={s.darkLink}>Verify the token</External>
+        </div>
         <section id="experiment" className={s.experiment} aria-labelledby="experiment-title">
           <div className={s.sectionHeading}><div><span className={s.eyebrow}>03 / BIOLOGY, MEET MARKET</span><h2 id="experiment-title">A strange idea.<br />An inspectable process.</h2></div><p>A connectome is the starting point.<br />The implementation and its limits are public.</p></div>
           <div className={s.steps}>

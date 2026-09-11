@@ -29,3 +29,10 @@ export const GUARD = {
 } as const;
 
 export const FEE_TIERS = [3000, 10000, 500] as const;
+
+// Tokens the fly must NEVER trade. The project's own token lives here so
+// the experiment cannot be accused of trading itself — discovery skips
+// these addresses entirely (lowercase).
+export const TOKEN_DENYLIST = new Set<string>([
+  "0x1965a32c943097e27583bccb48b2a33547e33f51", // RHFLY (RobinFly)
+]);

@@ -15,3 +15,9 @@ export const SITE_NAME = "RobinFly";
 
 export const SOCIAL_HANDLE = "@RobinFlyPons";
 export const SOCIAL_URL = "https://x.com/RobinFlyPons";
+
+export const TOKEN = {
+  name: "RobinFly",
+  symbol: "RHFLY",
+  address: "0x1965a32c943097e27583bcCB48b2a33547e33f51",
+} as const;
