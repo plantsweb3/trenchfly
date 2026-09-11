@@ -118,3 +118,5 @@
 @media(prefers-reduced-motion:reduce) { .breathing .neuralTriangle,.breathing .neuron,.breathing .synapse { animation:none; }.breathing .synapse { opacity:.2; } }
 
 .spikeTrace{padding:15px 18px 0;border-top:1px solid #263121}.spikeTrace>div{display:flex;justify-content:space-between;gap:8px;font:9px var(--font-mono),monospace;color:#99aa8e}.spikeTrace b{font-weight:400;color:#d8e7c9}.spikeTrace svg{display:block;width:100%;height:54px;margin:10px 0 4px}.spikeTrace small{font:8px var(--font-mono),monospace;color:#95a587;line-height:1.6}
+
+.sampleStatus{display:flex;align-items:center;gap:7px;padding:10px 18px 0;font:8px var(--font-mono),monospace;color:#95a78a;letter-spacing:.07em}.sampleStatus>span:last-child{margin-left:auto;color:#bdd4aa}.sampleStatus>i{width:4px;height:4px;background:#536849;border-radius:50%}.sampleStatus>.sampleOn{background:#d7ff3f;box-shadow:0 0 8px #d7ff3faa}.rates strong{font-variant-numeric:tabular-nums}.rateTrack i{transition:width .35s ease,filter .35s ease}.neuron,.neuralTriangle{transition:opacity .35s ease}@media(prefers-reduced-motion:reduce){.rateTrack i,.neuron,.neuralTriangle{transition:none}}

@@ -60,6 +60,8 @@ export async function ingestPools(candidates:Candidate[],discoveredThrough:bigin
   // A shared block anchor validates all pools at the same cursor with one read.
   for(const c of active)if(c.swapCursor!==null){const b=await getBlock(BigInt(c.swapCursor));if(b.hash!==c.swapHash)throw new Error("Chain history changed at market cursor");}
   const logs=(await Promise.all(logRanges(from,to).map(range=>publicClient.getLogs({address:active.map(c=>c.pool as Address),event:swapEvent,...range,strict:true})))).flat();
+  const eventBlocks=[...new Set(logs.map(l=>l.blockNumber).filter((n):n is bigint=>n!==null))];
+  await Promise.all(eventBlocks.map(getBlock)); // Pacing remains enforced by the shared RPC budget.
   const byPool=new Map(active.map(c=>[c.pool,c]));const swapped=new Map<string,Swap[]>();
   for(const l of logs){
     const c=byPool.get(addr(l.address));if(!c)continue;

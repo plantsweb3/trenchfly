@@ -4,9 +4,9 @@ This package runs the full connectome and a public, read-only telemetry origin. 
 
 ## Host choice and budget
 
-The owner authorized up to **$25/month for the worker server** on 2026-09-10. No server has been purchased. Use a Linux x86_64 host with 8 GB RAM preferred (4 GB minimum after a memory test), 2+ vCPUs and 20+ GB disk. The model is CPU-bound; benchmark 500 ms of neural time on the actual machine before committing to its observation cadence. Shared CPU availability and pricing must be checked in the provider console. Keep taxes, IPv4 and add-ons inside the approved cap.
+The owner chose to run on the existing laptop on September 10, 2026. **Do not purchase a server under the earlier $25 discussion.** This package is retained for a future explicitly requested migration.
 
-Hetzner's [current price notice](https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/) is the price source. Its cost-optimized availability varies; do not buy a different, more expensive machine automatically. The provider account/sign-in and a concrete available server are still required.
+A future host should have 8 GB RAM preferred (4 GB minimum after a memory test), 2+ vCPUs and 20+ GB disk. Benchmark the full model on the selected machine and confirm a new concrete budget before provisioning.
 
 ## Deployment contents
 
@@ -35,4 +35,6 @@ A chart expires 45 seconds after its quote timestamp; stale observations cannot 
 
 ## Current public delivery
 
-On the Mac, development preview reads loopback telemetry directly. Production uses the existing GitHub archive until a reachable worker HTTPS origin is configured. Archive delivery can lag by minutes. This is labeled on the website and must not be marketed as a tick stream.
+The development preview reads loopback telemetry directly. Production is configured to read the laptop through a temporary Cloudflare Quick Tunnel, with the browser checking the Vercel feed proxy every three seconds. This is periodic delivery of recorded observations, not a per-spike live stream. GitHub remains the archive.
+
+The owner must keep the laptop open, powered and online. The worker is detached from the terminal and has an idle-sleep inhibitor; shutdown, closing the lid or connection loss can interrupt it. The temporary tunnel has no uptime guarantee, and restarting it can change its address. After a reboot, reconnect the relay and update the Vercel origin before expecting the public feed to resume. Start/stop paper controls preserve the paper ledger and do not enable real-money trading.

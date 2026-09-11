@@ -49,7 +49,7 @@ function usePublicResource<T>(url: string, normalize: (value: unknown) => T | nu
       }
     }
     void load();
-    const interval = setInterval(load, 30_000);
+    const interval = setInterval(load, url === "/api/feed" ? 3_000 : 30_000);
     const onVisible = () => { if (!document.hidden) void load(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => { alive = false; active?.abort(); clearInterval(interval); document.removeEventListener("visibilitychange", onVisible); };
@@ -145,7 +145,7 @@ function SessionPanel({ resource, now }: { resource: Resource<PublicSession> & {
         <div className={s.consoleFooter}><div><Badge tone={execution.tone}>{execution.label}</Badge><p>{execution.detail}</p></div><External href={HISTORY} className={s.textLink}>Feed history</External></div>
       </div>
       <p className={s.scienceNote}>Research status: chart pixels influence the model, but understanding price direction and profitability are unproven. <a href="/research/vision-audit.json" target="_blank" rel="noopener noreferrer">Inspect the 35-observation controlled test ↗</a></p>
-      <div className={s.consoleNote}><span>Public feed checked every 30 seconds. Archived delivery can lag by several minutes; timestamps show the age of each observation.</span><External href={FEED} className={s.textLink}>Raw data</External></div>
+      <div className={s.consoleNote}><span>{feed?.transport === "direct" ? "Direct laptop feed · checked every 3 seconds." : "Archived feed · checked every 3 seconds. Delivery can lag; timestamps show the age of each observation."}</span><External href={FEED} className={s.textLink}>Raw data</External></div>
     </section>
   );
 }

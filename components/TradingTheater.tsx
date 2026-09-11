@@ -30,6 +30,18 @@ const triangles = nodes.flatMap((node, i) => {
 function NeuralWindow({ decision, tier, active, pulse }: { decision?: SessionDecision; tier: PublicSession["tier"]; active: boolean; pulse: number }) {
   const windowRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+  const [sampleIndex,setSampleIndex]=useState<number|null>(null);
+  const bins=decision?.neural?.bins;
+  const sampleCount=bins?.length??0;
+  useEffect(()=>{
+    if(!active||!visible||!sampleCount||window.matchMedia("(prefers-reduced-motion: reduce)").matches){const reset=setTimeout(()=>setSampleIndex(null),0);return()=>clearTimeout(reset);}
+    let index=0;const start=setTimeout(()=>setSampleIndex(0),0);
+    const timer=setInterval(()=>{index++;if(index>=sampleCount){clearInterval(timer);return;}setSampleIndex(index);},400);
+    return()=>{clearTimeout(start);clearInterval(timer);};
+  },[active,visible,sampleCount,decision?.id,decision?.t,pulse]);
+  const sample=active&&sampleIndex!==null?bins?.[sampleIndex]:undefined;
+  const motorL=sample?.rateL??decision?.rateL;
+  const motorR=sample?.rateR??decision?.rateR;
   const glowId = `neural-glow-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   useEffect(() => {
     const element = windowRef.current;
@@ -41,10 +53,10 @@ function NeuralWindow({ decision, tier, active, pulse }: { decision?: SessionDec
     return () => { observer.disconnect(); document.removeEventListener("visibilitychange", sync); };
   }, []);
   const hasRates = decision?.rateL !== null && decision?.rateL !== undefined && decision.rateL >= 0 && decision?.rateR !== null && decision?.rateR !== undefined && decision.rateR >= 0;
-  const left = rateIntensity(decision?.rateL), right = rateIntensity(decision?.rateR);
+  const left = rateIntensity(motorL), right = rateIntensity(motorR);
   return <div className={s.neuralWindow} ref={windowRef}>
     <div className={s.windowBar}><span>NEURAL ACTIVITY</span><span>{tier === 2 ? "CONNECTOME" : tier === 1 ? "PROXY" : "UNREPORTED"}</span></div>
-    <svg key={pulse} className={`${s.network} ${hasRates && visible ? s.breathing : ""} ${active && hasRates && visible ? s.firing : ""}`} viewBox="0 0 340 208" role="img" aria-label={hasRates ? `Schematic motor activity: left ${decision!.rateL!.toFixed(1)} hertz, right ${decision!.rateR!.toFixed(1)} hertz. Not a map of individual neuron activity.` : "Neural activity unavailable; no recorded motor rates"}>
+    <svg key={pulse} className={`${s.network} ${hasRates && visible ? s.breathing : ""} ${active && hasRates && visible ? s.firing : ""}`} viewBox="0 0 340 208" role="img" aria-label={hasRates ? `Schematic motor activity: left ${motorL!.toFixed(1)} hertz, right ${motorR!.toFixed(1)} hertz. Not a map of individual neuron activity.` : "Neural activity unavailable; no recorded motor rates"}>
       <defs><filter id={glowId} x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="2.3" result="bloom" /><feMerge><feMergeNode in="bloom" /><feMergeNode in="SourceGraphic" /></feMerge></filter></defs>
       <g className={s.facets}>{triangles.map(triangle => <polygon key={triangle.key} points={triangle.points} className={s.neuralTriangle} fill={triangle.side ? "#79c6ee" : "#c9fc5a"} stroke={triangle.side ? "#7bccf3" : "#d7ff3f"} style={{ opacity: hasRates ? .06 + (triangle.side ? right : left) * .12 : .025, "--triangle-delay": `${triangle.delay}s` } as CSSProperties} />)}</g>
       <g className={s.edges}>{edges.map(({ a, b }) => <line key={`${a}-${b}`} x1={nodes[a].x} y1={nodes[a].y} x2={nodes[b].x} y2={nodes[b].y} opacity={hasRates ? .13 + (nodes[a].side ? right : left) * .45 : .1} />)}</g>
@@ -52,7 +64,8 @@ function NeuralWindow({ decision, tier, active, pulse }: { decision?: SessionDec
       <g filter={`url(#${glowId})`}>{nodes.map((node, i) => <circle key={i} cx={node.x} cy={node.y} r={i % 7 === 0 ? 3.6 : 2.3} className={s.neuron} fill={node.side ? "#a6e4ff" : "#e2ff86"} style={{ opacity: hasRates ? .24 + (node.side ? right : left) * .76 : .12, "--pulse-delay": `${-(i % 13) * .28}s` } as CSSProperties} />)}</g>
       <text x="58" y="195">LEFT OUTPUT</text><text x="211" y="195">RIGHT OUTPUT</text>
     </svg>
-    <div className={s.rates}><div><span>LEFT MOTOR</span><strong>{hasRates ? decision!.rateL!.toFixed(1) : "—"}<small>Hz</small></strong><div className={s.rateTrack}><i style={{ width: `${left * 100}%` }} /></div></div><div><span>RIGHT MOTOR</span><strong>{hasRates ? decision!.rateR!.toFixed(1) : "—"}<small>Hz</small></strong><div className={s.rateTrack}><i style={{ width: `${right * 100}%` }} /></div></div></div>
+    <div className={s.sampleStatus} title="The mesh is schematic; the motor readings come from measured spike counts."><i className={sample?s.sampleOn:undefined}/><span>{sample?`RECORDED SAMPLE ${String((sampleIndex??0)+1).padStart(2,"0")} / ${sampleCount}`:"WINDOW AVERAGE"}</span><span>{sample?`${sample.tMs} ms`:decision?utcTime(decision.t)+" UTC":"AWAITING INPUT"}</span></div>
+    <div className={s.rates}><div><span>LEFT MOTOR</span><strong>{hasRates ? motorL!.toFixed(1) : "—"}<small>Hz</small></strong><div className={s.rateTrack}><i style={{ width: `${left * 100}%` }} /></div></div><div><span>RIGHT MOTOR</span><strong>{hasRates ? motorR!.toFixed(1) : "—"}<small>Hz</small></strong><div className={s.rateTrack}><i style={{ width: `${right * 100}%` }} /></div></div></div>
     {decision?.neural && <div className={s.spikeTrace}>
       <div><span>RECORDED SPIKE TRACE</span><b>{decision.neural.totalSpikes.toLocaleString("en-US")} spikes</b></div>
       <svg viewBox="0 0 300 54" role="img" aria-label={`Measured left and right motor rates in ${decision.neural.bins.length} bins across ${decision.neural.neuralMs} milliseconds of simulated neural time`}>
@@ -60,7 +73,6 @@ function NeuralWindow({ decision, tier, active, pulse }: { decision?: SessionDec
         {(["rateL","rateR"] as const).map((side,i)=><polyline key={side} fill="none" stroke={i?"#93d5f7":"#d7ff3f"} strokeWidth="1.8" points={decision.neural!.bins.map((b,j)=>`${5+j*290/Math.max(1,decision.neural!.bins.length-1)},${49-Math.min(1,b[side]/500)*44}`).join(" ")} />)}
       </svg><small>{decision.neural.neuralMs} ms neural time · 50 ms bins · L lime / R blue · 0–500 Hz</small>
     </div>}
-    <p className={s.neuralNote}>Glowing facets visualize the recorded motor-rate summary. Pulses and connections are illustrative, not individual neuron measurements. Scale: 0–400 Hz.</p>
   </div>;
 }
 
