@@ -1,5 +1,5 @@
 /** Read-only recovery report. Never clears pending intents or broadcasts. */
-import {readFileSync,writeFileSync,mkdirSync} from "node:fs";
+import {existsSync,readFileSync,writeFileSync,mkdirSync} from "node:fs";
 import {dirname,join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {formatEther,isAddress,type Address} from "viem";
@@ -11,7 +11,12 @@ import {assertChain} from "./guard";
 import {safeError} from "../lib/rpc-config";
 async function main(){
  const runs=join(dirname(fileURLToPath(import.meta.url)),"runs");
- const raw=JSON.parse(readFileSync(join(runs,"live-state.json"),"utf8")) as Ledger;
+ const statePath=join(runs,"live-state.json");
+ if(!existsSync(statePath)){
+  console.log("No live-state.json — no live session has run; nothing to reconcile.");
+  return;
+ }
+ const raw=JSON.parse(readFileSync(statePath,"utf8")) as Ledger;
  if(!raw.account||!isAddress(raw.account))throw new Error("Saved live account unavailable");
  const state=validateLedger(raw,"live",raw.account);assertChain(await publicClient.getChainId(),robinhoodChain.id);
  const owner=raw.account as Address;const rows:Record<string,unknown>[]=[];
