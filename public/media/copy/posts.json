@@ -1,0 +1,93 @@
+{
+  "handle": "@RobinFlyPons",
+  "bio": "A fruit-fly connectome meets the market. Watch neural proposals and paper outcomes in public. Small brain. Public record. \u2193",
+  "standalone": "The fly is clocked in.\n\nRobinFly puts market charts in front of a simulated fruit-fly connectome and publishes its neural proposals and paper outcomes.\n\nSmall brain. Public record.\n\nWatch the experiment: https://robinfly.net/#session",
+  "thread": [
+    "1/6 A fly brain. A trading desk. An open experiment.\n\nMeet RobinFly: a simulated fruit-fly connectome responding to market charts on Robinhood Chain.\n\nThe public launch is in paper mode.\nhttps://robinfly.net/#session",
+    "2/6 What does he actually see?\n\nThe worker turns market data into a chart image and passes it to the model. You can open the exact recorded frame beside the resulting proposal.",
+    "3/6 What lights up?\n\nThe left and right motor readouts play through measured samples from the simulation. The glowing mesh is a visual guide, not a neuron-by-neuron map.",
+    "4/6 Where do the pairs come from?\n\nSoftware discovers and rotates supported Uniswap v3 WETH pools. The connectome proposes BUY, SELL or HOLD for the chart it receives.\n\nSoftware picks the input; the neural response feeds the proposal.",
+    "5/6 Public means the awkward parts too.\n\nHolds, rejected proposals and paper fills share the same record. Profitable learning and reliable chart understanding have not been demonstrated.\n\nInspect the experiment instead of taking our word for it.",
+    "6/6 He has a desk now. Come watch him work.\n\nSession: https://robinfly.net/#session\nArt + media kit: https://robinfly.net/media\nUpdates: @RobinFlyPons\n\nSmall brain. Public record."
+  ],
+  "followups": [
+    {
+      "title": "Desk reveal",
+      "text": "A desk. Two buttons. Six legs.\n\nThe fly has clocked in. Watch the paper experiment at https://robinfly.net/#session",
+      "asset": "motion/robinfly-desk-loop.mp4",
+      "characters": 115
+    },
+    {
+      "title": "How it works",
+      "text": "Chart in. Spikes out.\n\nA market image becomes input to a simulated connectome. Its motor response feeds a BUY, SELL or HOLD proposal. The paper outcome goes into the public record.\n\nhttps://robinfly.net/#experiment",
+      "asset": "social/how-it-works.png",
+      "characters": 214
+    },
+    {
+      "title": "Character",
+      "text": "Let the fly cook.\n\nWatch the experiment: https://robinfly.net/#session\n\nPaper mode. Public record.",
+      "asset": "art/robinfly-let-the-fly-cook-square.png",
+      "characters": 98
+    },
+    {
+      "title": "Input evidence",
+      "text": "The chart on his screen is part of the record.\n\nOpen an observation, inspect the exact input and follow the resulting proposal.\n\nhttps://robinfly.net/#session",
+      "asset": "social/launch-landscape.png",
+      "characters": 158
+    },
+    {
+      "title": "Honest outcomes",
+      "text": "A rejected proposal belongs in the record too.\n\nThis timestamped paper observation includes the chart, the measured motor samples and the guard result.\n\nInspect the session: https://robinfly.net/#session",
+      "asset": "social/recorded-observation.png",
+      "characters": 203
+    },
+    {
+      "title": "Research",
+      "text": "Does responding to a chart mean understanding it?\n\nOur controlled test found an input effect, but not a consistent directional response across seeds. That distinction is part of the experiment.\n\nhttps://robinfly.net/research/vision-audit.json",
+      "asset": "social/how-it-works.png",
+      "characters": 242
+    },
+    {
+      "title": "Source",
+      "text": "Curious what sits behind the fly?\n\nThe implementation and published evidence are open to inspect. The experiment is in paper mode, and its limits are part of the story.\n\nhttps://github.com/plantsweb3/trenchfly",
+      "asset": "social/character-square.png",
+      "characters": 209
+    },
+    {
+      "title": "Media kit",
+      "text": "The fly brought assets.\n\nBanners, posters, a tiny desk film, logos and a clear description of what RobinFly does.\n\nhttps://robinfly.net/media\n\nTag @RobinFlyPons if you share him.",
+      "asset": "social/launch-portrait.png",
+      "characters": 178
+    }
+  ],
+  "replies": [
+    {
+      "question": "Is this trading real funds?",
+      "answer": "The public launch is a paper experiment. It reads market data and records simulated outcomes. The session labels its mode and timestamps."
+    },
+    {
+      "question": "Is this a living fly?",
+      "answer": "No. It is a computational model based on a mapped fruit-fly connectome. The character is a visual representation of the experiment."
+    },
+    {
+      "question": "Does it choose which token to inspect?",
+      "answer": "Software selects from supported pools and presents a chart. The neural response feeds a BUY, SELL or HOLD proposal for that input."
+    },
+    {
+      "question": "Is the network animation real?",
+      "answer": "The motor numbers and spike trace come from the simulation. The mesh layout and decorative pulses are schematic, not a map of measured activity in individual neurons."
+    },
+    {
+      "question": "Has it learned to make money?",
+      "answer": "Profitable learning has not been demonstrated. We publish the inputs, responses and outcomes so the work can be inspected."
+    },
+    {
+      "question": "Is RobinFly affiliated with Robinhood?",
+      "answer": "No. RobinFly is an independent experiment using Robinhood Chain market data."
+    },
+    {
+      "question": "Why does the GitHub URL say trenchfly?",
+      "answer": "RobinFly was previously named TrenchFly. The existing repository path remains in place to preserve its history and working integrations. The official site is robinfly.net."
+    }
+  ]
+}

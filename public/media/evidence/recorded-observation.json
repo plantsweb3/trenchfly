@@ -1,0 +1,170 @@
+{
+  "capturedAt": "2026-09-11T00:18:48.566Z",
+  "mode": "paper",
+  "runId": "76aff4e9-f08f-4fad-a65e-6929e4cfae9a",
+  "decision": {
+    "id": "602457c8-503f-44fe-bc0d-0588910e7ef0",
+    "t": "2026-09-11T00:18:35.614Z",
+    "symbol": "test2",
+    "token": "0xfe9e741bb987d29774d2ab8959680ad289f2bc67",
+    "proposal": "BUY",
+    "rateL": 280,
+    "rateR": 260,
+    "dev": 14.84,
+    "gate": true,
+    "frameSha": "5cb04fd0522f65401d4c6ba658741c98fa6ee330f33ae674d4299ca67c4771f2",
+    "result": "rejected: drawdown stop — trading P&L, deposits excluded",
+    "priceEth": 8.119311643e-9,
+    "quoteAt": "2026-09-11T00:18:14.491Z",
+    "input": {
+      "source": "uniswap_v3_swaps",
+      "pool": "0xdf2a831ba15f81bf5b219fc3f3f5847ded15a694",
+      "discoveryTx": "0x34806914d0d54e66f00ed062b93dd28c5b70c91b4951875b0bd94e1946ae8949",
+      "discoveryBlock": "59818827",
+      "createdAt": 1789085197000,
+      "ageSeconds": 697,
+      "candles": [
+        {
+          "t": 1789085160000,
+          "open": 8.28375676054493e-9,
+          "high": 8.28375676054493e-9,
+          "low": 8.28375676054493e-9,
+          "close": 8.28375676054493e-9,
+          "volumeEth": 0.000409785682088268,
+          "buys": 1,
+          "sells": 0
+        }
+      ],
+      "volumeEth5m": 0,
+      "buys5m": 0,
+      "sells5m": 0,
+      "liquidityRaw": "90556686694656661666084",
+      "poolWeth": 0.000409785682088268,
+      "poolToken": 999950531.4202319,
+      "statsAt": 1789085880598,
+      "holders": null,
+      "scanThroughBlock": "59825722",
+      "scanThroughAt": 1789085890000,
+      "coverageCurrent": true,
+      "marketObservedAt": 1789085894491
+    },
+    "pool": "0xdf2a831ba15f81bf5b219fc3f3f5847ded15a694",
+    "neural": {
+      "neuralMs": 500,
+      "totalSpikes": 1917276,
+      "bins": [
+        {
+          "tMs": 50,
+          "rateL": 300,
+          "rateR": 280,
+          "gateSpikes": 16,
+          "totalSpikes": 190710
+        },
+        {
+          "tMs": 100,
+          "rateL": 260,
+          "rateR": 220,
+          "gateSpikes": 27,
+          "totalSpikes": 191976
+        },
+        {
+          "tMs": 150,
+          "rateL": 280,
+          "rateR": 260,
+          "gateSpikes": 22,
+          "totalSpikes": 193944
+        },
+        {
+          "tMs": 200,
+          "rateL": 280,
+          "rateR": 280,
+          "gateSpikes": 14,
+          "totalSpikes": 191125
+        },
+        {
+          "tMs": 250,
+          "rateL": 320,
+          "rateR": 300,
+          "gateSpikes": 16,
+          "totalSpikes": 192079
+        },
+        {
+          "tMs": 300,
+          "rateL": 260,
+          "rateR": 280,
+          "gateSpikes": 22,
+          "totalSpikes": 193477
+        },
+        {
+          "tMs": 350,
+          "rateL": 280,
+          "rateR": 220,
+          "gateSpikes": 22,
+          "totalSpikes": 191377
+        },
+        {
+          "tMs": 400,
+          "rateL": 300,
+          "rateR": 260,
+          "gateSpikes": 23,
+          "totalSpikes": 191043
+        },
+        {
+          "tMs": 450,
+          "rateL": 280,
+          "rateR": 280,
+          "gateSpikes": 16,
+          "totalSpikes": 189249
+        },
+        {
+          "tMs": 500,
+          "rateL": 240,
+          "rateR": 220,
+          "gateSpikes": 22,
+          "totalSpikes": 192296
+        }
+      ],
+      "populations": [
+        {
+          "name": "dnp20_L",
+          "neurons": 1,
+          "spikes": 140,
+          "rateHz": 280
+        },
+        {
+          "name": "dnp20_R",
+          "neurons": 1,
+          "spikes": 130,
+          "rateHz": 260
+        },
+        {
+          "name": "dnpe017",
+          "neurons": 2,
+          "spikes": 200,
+          "rateHz": 200
+        },
+        {
+          "name": "R1_R6",
+          "neurons": 3377,
+          "spikes": 92904,
+          "rateHz": 55.02161681966242
+        },
+        {
+          "name": "R7_R8",
+          "neurons": 2714,
+          "spikes": 55982,
+          "rateHz": 41.25423728813559
+        },
+        {
+          "name": "KC",
+          "neurons": 4064,
+          "spikes": 585398,
+          "rateHz": 288.08956692913387
+        }
+      ],
+      "mapping": "engineered_flattened_pixels_v1"
+    },
+    "inferenceMs": 14222,
+    "signalAgeMs": 21123
+  }
+}

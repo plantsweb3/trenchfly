@@ -1,0 +1,11 @@
+:root {
+  --brand-ink: #080B09;
+  --brand-lime: #D7FF3F;
+  --brand-chalk: #F3F5E7;
+  --brand-muted: #AFBBA8;
+  --brand-red: #FF655D;
+  --brand-line: #2C382A;
+  --brand-amber: #F4BA63;
+  --font-display: 'IBM Plex Sans', Arial, sans-serif;
+  --font-data: 'IBM Plex Mono', monospace;
+}

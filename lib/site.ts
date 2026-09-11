@@ -12,3 +12,6 @@ function configuredOrigin(value: string | undefined): string | undefined {
 
 export const SITE_URL = configuredOrigin(configured);
 export const SITE_NAME = "RobinFly";
+
+export const SOCIAL_HANDLE = "@RobinFlyPons";
+export const SOCIAL_URL = "https://x.com/RobinFlyPons";

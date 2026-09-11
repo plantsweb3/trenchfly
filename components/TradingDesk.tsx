@@ -98,6 +98,10 @@ export default function TradingDesk({ className, frameSha, reaction, reactionKey
         model = gltf.scene; scene.add(model);
         const screen = model.getObjectByName("RF_ChartScreen") as Mesh;
         if (!screen?.isMesh) throw new Error("Desk monitor surface missing");
+        // The exported screen UVs are horizontally mirrored from the viewing side.
+        const screenUV = screen.geometry.getAttribute("uv");
+        for (let i = 0; i < screenUV.count; i++) screenUV.setX(i, 1 - screenUV.getX(i));
+        screenUV.needsUpdate = true;
         (Array.isArray(screen.material) ? screen.material : [screen.material]).forEach(material => material.dispose());
         const screenMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
         screen.material = screenMaterial;

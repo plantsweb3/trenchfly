@@ -1,5 +1,6 @@
 "use client";
 import MarketRadar from "./MarketRadar";
+import { SOCIAL_HANDLE, SOCIAL_URL } from "@/lib/site";
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
@@ -145,7 +146,7 @@ function SessionPanel({ resource, now }: { resource: Resource<PublicSession> & {
         <div className={s.consoleFooter}><div><Badge tone={execution.tone}>{execution.label}</Badge><p>{execution.detail}</p></div><External href={HISTORY} className={s.textLink}>Feed history</External></div>
       </div>
       <p className={s.scienceNote}>Research status: chart pixels influence the model, but understanding price direction and profitability are unproven. <a href="/research/vision-audit.json" target="_blank" rel="noopener noreferrer">Inspect the 35-observation controlled test ↗</a></p>
-      <div className={s.consoleNote}><span>{feed?.transport === "direct" ? "Direct laptop feed · checked every 3 seconds." : "Archived feed · checked every 3 seconds. Delivery can lag; timestamps show the age of each observation."}</span><External href={FEED} className={s.textLink}>Raw data</External></div>
+      <div className={s.consoleNote}><span>{feed?.transport === "direct" ? "Direct laptop feed · checked every 3 seconds." : "Archived feed · checked every 3 seconds. Delivery can lag; timestamps show the age of each observation."}</span><External href={feed?.transport === "direct" ? "/api/feed" : FEED} className={s.textLink}>Raw data</External></div>
     </section>
   );
 }
@@ -185,7 +186,7 @@ function WalletRecord({ now }: { now: number }) {
 
 const QUESTIONS = [
   { q: "Is this a real fly brain?", a: "It is a computational model built from a mapped fruit-fly connectome. It is not a living fly, and a wiring map is not a complete recreation of a biological brain. The public session identifies whether the worker reports the connectome kernel or the simpler proxy decoder." },
-  { q: "Is it trading real money right now?", a: "Check the session’s execution label and open individual receipts. A current feed means an update was published; it does not confirm live execution. Paper fills are labeled explicitly. The current worker reports its mode explicitly. Older snapshots may not include it." },
+  { q: "Is it trading real money right now?", a: "The public launch runs in paper mode. The worker reads market data and records simulated outcomes; it does not submit real orders. The session’s mode and timestamps show what the published record contains." },
   { q: "Can I trade through this page?", a: "This is an observation page, not a trading terminal or custody service. It does not connect to your wallet or place orders for you. The worker operates separately under its configured execution limits." },
   { q: "Does the fly learn to make money?", a: "Profitable learning has not been demonstrated. Dopamine-driven reinforcement is still in development. The experiment exposes what happened so that claims can be checked against the code and public record." },
 ];
@@ -201,14 +202,14 @@ export default function LaunchSite() {
     <header className={s.header}><div className={s.nav}>
       <a href="#" className={s.wordmark} aria-label="RobinFly home"><Mark /><span>ROBINFLY<span className={s.wordmarkDot}>.</span></span></a>
       <nav aria-label="Main navigation" className={s.navLinks}><a href="#session">Session</a><a href="#record">The record</a><a href="#experiment">The experiment</a></nav>
-      <External href={REPO} className={s.navSource}>Source</External>
+      <External href={SOCIAL_URL} className={s.navSource}>Follow on X</External>
     </div></header>
     <main id="main">
       <section className={s.hero} aria-labelledby="hero-title">
         <div className={s.heroCopy}>
-          <div className={s.heroKicker}><span className={s.dot} />A FLY BRAIN IN THE TRENCHES</div>
+          <div className={s.heroKicker}><span className={s.dot} />A PUBLIC PAPER EXPERIMENT</div>
           <h1 id="hero-title">SMALL<br />BRAIN.<br /><span>PUBLIC<br />RECORD.</span></h1>
-          <p className={s.heroDescription}>A fruit-fly connectome meets the market.<br className={s.desktopBreak} /> Every proposal has a story. Follow the evidence.</p>
+          <p className={s.heroDescription}>Watch a fruit-fly connectome respond to market charts.<br className={s.desktopBreak} /> Neural proposals. Paper outcomes. An open record.</p>
           <div className={s.heroActions}><a href="#session" className={s.primaryButton}>Watch the session<Arrow /></a><a href="#experiment" className={s.secondaryButton}>Meet the experiment<Arrow diagonal /></a></div>
         </div>
         <div className={s.heroVisual}>
@@ -234,6 +235,6 @@ export default function LaunchSite() {
         <section className={s.closing}><div><span className={s.eyebrow}>THE EXPERIMENT IS THE PRODUCT.</span><h2>Let the fly cook.<br /><span>Keep the receipts.</span></h2></div><a href="#session" className={s.primaryButton}>Back to the session<Arrow /></a></section>
       </div>
     </main>
-    <footer className={s.footer}><div className={s.footerTop}><a href="#" className={s.wordmark}><Mark /><span>ROBINFLY<span className={s.wordmarkDot}>.</span></span></a><div><External href={REPO}>Source code</External><External href={HISTORY}>Feed history</External><External href={EXPLORER}>Chain explorer</External></div></div><div className={s.footerBottom}><p>An experimental system on Robinhood Chain. Profitable learning has not been demonstrated.<br />No affiliation with Robinhood. The public wallet is not a token contract.</p><span>SMALL BRAIN.<br />PUBLIC RECORD.</span></div></footer>
+    <footer className={s.footer}><div className={s.footerTop}><a href="#" className={s.wordmark}><Mark /><span>ROBINFLY<span className={s.wordmarkDot}>.</span></span></a><div><External href={SOCIAL_URL}>{SOCIAL_HANDLE}</External><a href="/media">Media kit</a><External href={REPO}>Source code</External><External href={HISTORY}>Feed history</External></div></div><div className={s.footerBottom}><p>An experimental system on Robinhood Chain. Profitable learning has not been demonstrated.<br />No affiliation with Robinhood. The public wallet is not a token contract.</p><span>SMALL BRAIN.<br />PUBLIC RECORD.</span></div></footer>
   </div>;
 }

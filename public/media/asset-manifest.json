@@ -1,0 +1,315 @@
+{
+  "brand": "RobinFly",
+  "handle": "@RobinFlyPons",
+  "website": "https://robinfly.net",
+  "createdAt": "2026-09-11T00:18:48.633Z",
+  "source": "Existing native Blender mascot and workstation, original editable vector layouts; generated campaign art credited separately.",
+  "assets": [
+    {
+      "file": "social/x-header.png",
+      "editable": "social/x-header.svg",
+      "width": 1500,
+      "height": 500,
+      "title": "RobinFly X header \u2014 Small brain. Public record.",
+      "bytes": 151071
+    },
+    {
+      "file": "identity/avatar.png",
+      "editable": "identity/avatar.svg",
+      "width": 800,
+      "height": 800,
+      "title": "RobinFly profile icon",
+      "bytes": 38261
+    },
+    {
+      "file": "social/launch-landscape.png",
+      "editable": "social/launch-landscape.svg",
+      "width": 1600,
+      "height": 900,
+      "title": "The fly is clocked in \u2014 RobinFly launch card",
+      "bytes": 448362
+    },
+    {
+      "file": "social/launch-portrait.png",
+      "editable": "social/launch-portrait.svg",
+      "width": 1080,
+      "height": 1350,
+      "title": "RobinFly portrait launch poster",
+      "bytes": 473359
+    },
+    {
+      "file": "social/character-square.png",
+      "editable": "social/character-square.svg",
+      "width": 1080,
+      "height": 1080,
+      "title": "Let the fly cook \u2014 RobinFly character card",
+      "bytes": 236725
+    },
+    {
+      "file": "social/how-it-works.png",
+      "editable": "social/how-it-works.svg",
+      "width": 1600,
+      "height": 900,
+      "title": "RobinFly explained: market image, neural response, public outcome",
+      "bytes": 98157
+    },
+    {
+      "file": "social/story.png",
+      "editable": "social/story.svg",
+      "width": 1080,
+      "height": 1920,
+      "title": "RobinFly vertical launch story",
+      "bytes": 568898
+    },
+    {
+      "file": "social/decision-template.png",
+      "editable": "social/decision-template.svg",
+      "width": 1600,
+      "height": 900,
+      "title": "Editable decision card \u2014 not a result",
+      "bytes": 76009
+    },
+    {
+      "file": "social/recorded-observation.png",
+      "editable": "social/recorded-observation.svg",
+      "width": 1600,
+      "height": 900,
+      "title": "Timestamped RobinFly paper observation with measured neural samples",
+      "bytes": 114480
+    }
+  ],
+  "campaignArt": [
+    {
+      "file": "art/robinfly-small-brain-public-record-landscape.png",
+      "source": "Built-in imagegen; prompts included"
+    },
+    {
+      "file": "art/robinfly-let-the-fly-cook-square.png",
+      "source": "Built-in imagegen; prompts included"
+    }
+  ],
+  "motion": {
+    "file": "motion/robinfly-desk-loop.mp4",
+    "gif": "motion/robinfly-desk-loop.gif",
+    "width": 1280,
+    "height": 720,
+    "seconds": 6,
+    "audio": false,
+    "source": "Native Blender DeskHandRub clip",
+    "purpose": "Decorative mascot motion"
+  },
+  "copy": {
+    "pinnedThreadPosts": 6,
+    "followupPosts": 8,
+    "replyTemplates": 7,
+    "posted": false,
+    "scheduled": false
+  },
+  "files": [
+    {
+      "file": "BRAND-GUIDE.md",
+      "bytes": 3133,
+      "sha256": "e0f41dadd05de2ecd40bb9661f59bb4d49ddb41bf528a0484eea52d9e5bd6199"
+    },
+    {
+      "file": "LAUNCH-PLAN.md",
+      "bytes": 2031,
+      "sha256": "a17d9a08b7d4546fc0ef4b464f386d3f50cbb954f3fa3aa79e419fd51428a45e"
+    },
+    {
+      "file": "START-HERE.md",
+      "bytes": 1162,
+      "sha256": "1a448b8f4cb645b8c31cf6d7c3592cc98ed76fe8b5a0d481b8a1b06af4827c6a"
+    },
+    {
+      "file": "art/prompts-and-source-notes.json",
+      "bytes": 8334,
+      "sha256": "4a131f5e41936d082e171e903f94553dfff5c79fb1f74d3c879c69599582f683"
+    },
+    {
+      "file": "art/robinfly-let-the-fly-cook-square.png",
+      "bytes": 1561667,
+      "sha256": "960fe4933a9ea1402ae4542fa94c35fee864b5ee870aac3ecfb368854e4ea6e2"
+    },
+    {
+      "file": "art/robinfly-small-brain-public-record-landscape.png",
+      "bytes": 1800630,
+      "sha256": "823a1e45bdcc47ffbe93cfe885558b36397cc1aaaab4a1b5e7b5f9710220bd61"
+    },
+    {
+      "file": "copy/PRESS-COPY.md",
+      "bytes": 1505,
+      "sha256": "485da6655368912613626a8ed52fac32b6ef460bb3a9a16124268b51bfaefd86"
+    },
+    {
+      "file": "copy/X-POSTS.md",
+      "bytes": 5504,
+      "sha256": "ad9eb937c5d938c7dd95c5ec4d6e5b1052ee6433ebfa8229afca9a19b67e97ac"
+    },
+    {
+      "file": "copy/posts.json",
+      "bytes": 5813,
+      "sha256": "b0855f8e9e5f2f831aed4401980427431d8742117f3b06a8375274f538656a90"
+    },
+    {
+      "file": "evidence/5cb04fd0522f65401d4c6ba658741c98fa6ee330f33ae674d4299ca67c4771f2.png",
+      "bytes": 3912,
+      "sha256": "5cb04fd0522f65401d4c6ba658741c98fa6ee330f33ae674d4299ca67c4771f2"
+    },
+    {
+      "file": "evidence/recorded-observation.json",
+      "bytes": 4240,
+      "sha256": "59e8cb178589a355fc20c1ab3471eba746eeb7440aa604067fdd11e142fad5fe"
+    },
+    {
+      "file": "identity/avatar.png",
+      "bytes": 38261,
+      "sha256": "e43c307658efacaea86ef0719b7cb1d0b08bcd79323fa0d4cd39324f3804f9f1"
+    },
+    {
+      "file": "identity/avatar.svg",
+      "bytes": 642,
+      "sha256": "c395ff3ff4777041d4084e43c10b10e953a88db70a9ca2ae0dbaa41fb37e2b31"
+    },
+    {
+      "file": "identity/brand-tokens.css",
+      "bytes": 283,
+      "sha256": "6e4b25725eda5ea110d909c62efd8ec7e395e762a6f2d028db0a387398826d8c"
+    },
+    {
+      "file": "identity/desk-transparent.png",
+      "bytes": 1065586,
+      "sha256": "932de64961e3d20327b04402774666df76d970b8552bc859fc5e82d127d8322b"
+    },
+    {
+      "file": "identity/fly-symbol-mono.svg",
+      "bytes": 430,
+      "sha256": "d754e8abe675b9e2b101779bdceb0d40fd095f6a86b50b4297b178b3b682ac9f"
+    },
+    {
+      "file": "identity/fly-symbol.svg",
+      "bytes": 430,
+      "sha256": "461f56518934bc0005b052543fcf1a7c043c3897ae5dd495ad832f47a5b64869"
+    },
+    {
+      "file": "identity/fly-transparent.png",
+      "bytes": 919793,
+      "sha256": "3fbf2584e52e4e6741fb107e1f9718b53bfc283a4d02086d3c1d7d7853e80d81"
+    },
+    {
+      "file": "identity/wordmark-lime.svg",
+      "bytes": 582,
+      "sha256": "198e7c42bcb9512f016d53a7b61d85c36245bec851de1a03e32f4f85eb588a0d"
+    },
+    {
+      "file": "identity/wordmark.svg",
+      "bytes": 582,
+      "sha256": "a4ba6e0ea491e76ca5afb0937870fa6fa26c8ab546f7d9fb433bf812bd2a4ebf"
+    },
+    {
+      "file": "kit-preview.png",
+      "bytes": 406200,
+      "sha256": "fad6f0635ec302c1a17d2efa488ab0b2de26fa5f92e48f398f483c889fad7cef"
+    },
+    {
+      "file": "motion/motion-notes.json",
+      "bytes": 238,
+      "sha256": "8ae5d1babf7d5baee16330a0a92959550f1e8b1cf4b4380d2e92a2b6c714a1d8"
+    },
+    {
+      "file": "motion/robinfly-desk-loop-poster.png",
+      "bytes": 205131,
+      "sha256": "fe58fb8e0870e721f643ca62c67c4f51a3d6568a44920a4689da730a0fd53fa1"
+    },
+    {
+      "file": "motion/robinfly-desk-loop.gif",
+      "bytes": 301872,
+      "sha256": "450f56013c3234d1f3efc609d9f641f8c3c444da8fc108f41fbce2ead7cee17a"
+    },
+    {
+      "file": "motion/robinfly-desk-loop.mp4",
+      "bytes": 160176,
+      "sha256": "853b3dfbea00408ef532ce5e8b07b7f0908f08d3921406f7e9c56f7828917dc9"
+    },
+    {
+      "file": "social/character-square.png",
+      "bytes": 236725,
+      "sha256": "328e796c57fed91116b0603eeb42e3d16d22a3f62e6f2df0849a180df9c5b2a5"
+    },
+    {
+      "file": "social/character-square.svg",
+      "bytes": 1228595,
+      "sha256": "d87514419b02e7300fb6eb606cd88d9d57b2d71b4034f2623f05f7ed1b09bdb2"
+    },
+    {
+      "file": "social/decision-template.png",
+      "bytes": 76009,
+      "sha256": "624d3d57eea80d564b373e3201a9ee3b0bf63e11330bdf8d1cb53ef27e22a4cc"
+    },
+    {
+      "file": "social/decision-template.svg",
+      "bytes": 2508,
+      "sha256": "238480a634ccd991c53a4ad445228763ccddaa82bacd9a4ca43d2436b1cb3c52"
+    },
+    {
+      "file": "social/how-it-works.png",
+      "bytes": 98157,
+      "sha256": "6f00d81ba3eac71fa930055987f967682d0eca531c9cb23760d798711048cedb"
+    },
+    {
+      "file": "social/how-it-works.svg",
+      "bytes": 3886,
+      "sha256": "4bb44427e4ca1d097f3ca1222e2b3e929c1ec929c02713f1bb2c9c684e0e4517"
+    },
+    {
+      "file": "social/launch-landscape.png",
+      "bytes": 448362,
+      "sha256": "e1ec8e1d2cc81911e0a021026b8961293088f42726970a8c4bbffdd70b1b7c24"
+    },
+    {
+      "file": "social/launch-landscape.svg",
+      "bytes": 1423318,
+      "sha256": "955d6f2b75eeed8df7c1838ac61052a00c1084fdedda7215bd30fac2b130a9a1"
+    },
+    {
+      "file": "social/launch-portrait.png",
+      "bytes": 473359,
+      "sha256": "03a347b1d1c83fa89dac5d46f268b4b31f408bc4659d7381e8bcba4f194f8c65"
+    },
+    {
+      "file": "social/launch-portrait.svg",
+      "bytes": 1423016,
+      "sha256": "c9c0738372a414bced0236c5c381a39b56c37a80d120313bb0275597c33bfc11"
+    },
+    {
+      "file": "social/recorded-observation.png",
+      "bytes": 114480,
+      "sha256": "116f5eddfbadc9e733af4723d5c1cfb8c176dc61df6375ef24c3ea3af8466b70"
+    },
+    {
+      "file": "social/recorded-observation.svg",
+      "bytes": 8593,
+      "sha256": "fe3b0f40830093d06731616677c364d07e4100dd6c9a83a574ea20cdf2a2166f"
+    },
+    {
+      "file": "social/story.png",
+      "bytes": 568898,
+      "sha256": "489c9905284c1e2b564e2fe7d2830b2ff4fb78e80eaa2945aae4f6c76c583abe"
+    },
+    {
+      "file": "social/story.svg",
+      "bytes": 1423091,
+      "sha256": "db783adbda2e351564222b31ab3d0123c31d79bcd9d2ec2b679006af0bc3db8c"
+    },
+    {
+      "file": "social/x-header.png",
+      "bytes": 151071,
+      "sha256": "db905d7bc27d185b8b814c17532d2809fc406a271d77faabf85cdff17da262c3"
+    },
+    {
+      "file": "social/x-header.svg",
+      "bytes": 1228413,
+      "sha256": "a6c6e10a58119bcdfa71106e9c651fab021d3a102d5c03a11da8dce990b60973"
+    }
+  ]
+}

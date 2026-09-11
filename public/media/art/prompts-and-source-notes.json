@@ -1,0 +1,51 @@
+{
+  "generatedAt": "2026-09-10",
+  "mode": "built-in image_gen",
+  "intendedUse": "RobinFly launch campaign art",
+  "officialDomain": "robinfly.net",
+  "officialXHandle": "@RobinFlyPons",
+  "referenceImages": [
+    {
+      "path": "identity/fly-transparent.png",
+      "role": "Authoritative mascot identity reference"
+    },
+    {
+      "path": "identity/desk-transparent.png",
+      "role": "Workstation and style reference"
+    }
+  ],
+  "commonNotes": [
+    "Created with one built-in image_gen call per distinct asset; no CLI fallback.",
+    "Reference images were visually inspected before generation.",
+    "Generated PNGs copied unchanged into the project outputs; originals retained.",
+    "Campaign illustrations are fictional decorative art and do not establish live fills, profits, or neural data.",
+    "Both outputs were visually inspected for mascot identity, exact requested typography, composition, and avoid constraints."
+  ],
+  "assets": [
+    {
+      "file": "robinfly-small-brain-public-record-landscape.png",
+      "width": 1672,
+      "height": 941,
+      "requestedAspectRatio": "16:9",
+      "actualAspectRatio": 1.7768331562167907,
+      "prompt": "Use case: ads-marketing.\nAsset type: finished cinematic landscape launch campaign poster, widescreen 16:9, high resolution.\nPrimary request: Create a polished RobinFly campaign illustration with professional, perfectly legible typography, featuring the reference fly at its miniature lab workstation. This is a new poster using the two supplied images as visual references, not a collage.\nInput images: Image 1 is the authoritative mascot identity reference. Image 2 is a workstation subject and visual-style reference.\nSubject invariants: preserve the distinctive low-poly olive-and-charcoal fruit fly, enormous faceted coral/red eyes, pale lime translucent wings with explicit triangular facets, segmented abdomen with fine lime bands, exactly six slender jointed legs and small antennae. Keep insect anatomy and the recognizable reference silhouette.\nScene: a premium tiny laboratory desk on a near-black studio stage. The fly operates a miniature monitor with two tangible separate physical keys, one labeled \"BUY\" and the other \"SELL\", and a tiny ceramic mug. The monitor contains only a clearly decorative abstract angular line without numbers, ticks, chart labels, or assertions. Include a subtle small on-screen \"PAPER\" label so the experiment framing is unambiguous.\nComposition: landscape poster with generous clean dark negative space on the left for the headline; the complete collectible miniature workstation scene sits on the right and lower half. Camera at three-quarter desk height, a convincing miniature-product scale, all key text within safe margins. A confident editorial poster, not an app screenshot.\nStyle and lighting: beautifully finished premium low-poly collectible 3D sculpture; carefully controlled geometry and realistic translucent wing materials; dramatic lime rim lighting and restrained ice-blue edge light; subtle volumetric stage atmosphere; rich clean black shadows. The small desk is matte charcoal with sparse lime details.\nBrand palette: near-black #080c09, acid lime #d7ff3f, warm white #f1f5e7, restrained ice blue. Coral-red eyes retain identity.\nText verbatim: At top left a clean acid-lime wordmark \"ROBINFLY.\". Below, large warm-white ultra-bold modern sans-serif headline on two lines: \"SMALL BRAIN.\" then \"PUBLIC RECORD.\". A small, precisely typeset label reads \"PAPER EXPERIMENT\". Small bottom footer reads \"robinfly.net\" and \"@RobinFlyPons\". Make all requested typography correctly spelled, elegant, and legible, with professional optical alignment and ample breathing room. Avoid any other text except requested key/screen labels.\nConstraints: Exactly one fly and six legs. No Robinhood logo or other logos. No invented profits, percentages, real fills, live trade badges, real neural data, numbered axes, numerical labels, or performance claims. Any screen imagery is decorative campaign art. No crowds, human hands, costumes, additional creatures, excessive props, watermark, or extraneous badges. Deliver one finished poster, no variants.",
+      "qualityAssessment": "Strong finished campaign composition. Correct headline, wordmark, paper-experiment label, domain and official handle. Coral faceted eyes, olive segmented body and translucent triangulated wings match the reference. BUY and SELL labels and mug are clear. The decorative monitor has no numerical labels or performance claims.",
+      "limitations": [
+        "Output is approximately 16:9 (1672\u00d7941); it has not been resized or cropped."
+      ]
+    },
+    {
+      "file": "robinfly-let-the-fly-cook-square.png",
+      "width": 1254,
+      "height": 1254,
+      "requestedAspectRatio": "1:1",
+      "actualAspectRatio": 1,
+      "prompt": "Use case: ads-marketing.\nAsset type: finished square 1:1 character editorial launch poster, high resolution.\nPrimary request: A premium RobinFly collectible-style editorial poster, featuring a close-up of the reference low-poly fly knowingly rubbing its two forelegs together above a tiny laboratory desk.\nInput images: Image 1 is the authoritative mascot identity reference. Image 2 is a supporting desk/miniature style reference. Generate a fresh poster, not a collage.\nSubject invariants: preserve the olive-and-charcoal low-poly fruit fly, two huge jewel-like faceted coral/red compound eyes, small antennae, triangular pale-lime translucent wings, segmented dark abdomen with lime banding. Exactly six slender jointed insect legs: four bracing on or around the desk and the two forelegs raised together in a rubbing gesture below its face. No human hands, fingers, mittens or clothing. Maintain the recognizable reference fly identity.\nScene and framing: intimate front three-quarter portrait of the fly at its charcoal miniature desk, central expressive character as a premium low-poly collectible sculpture. Wings frame the shoulders and recede naturally. A tiny mug at a desk edge supports miniature scale. The desk occupies the lower band and the fly fills the middle of the frame. Generous clean near-black field across the top carries the main headline, with clear professional hierarchy, never obscuring the eyes.\nStyle/medium: exquisite polygonal 3D illustration with crisp faceted eye geometry, translucent triangulated wings and tasteful material realism. Editorial campaign art direction. Rich soft shadows, careful dramatic acid-lime rim light, slight ice-blue edge light, restrained cinematic atmosphere, confident and playful without becoming a cartoon human.\nPalette: near-black #080c09, acid lime #d7ff3f, warm white #f1f5e7, restrained ice-blue accents, preserve coral eyes.\nTypography, exact text: Small supporting wordmark \"ROBINFLY.\" above a large bold modern sans-serif headline \"LET THE FLY COOK.\" on two balanced lines if needed. Exact secondary line \"Watch the experiment.\" in warm white, clearly readable. Footer in small typography \"PAPER MODE \u00b7 robinfly.net\" and the exact official X handle \"@RobinFlyPons\". Keep safe margins and elegant optical spacing. Requested wording must be verbatim with correct capitalization, punctuation and no duplicates.\nConstraints: exactly one fly, six insect legs including the two raised forelegs. No Robinhood logo, no invented profits or trading performance, no numerical chart labels, live fills, neural data, or financial claims. No extra screen data or screens required. No extra creatures, humans, watermark, extra slogans or UI badges. One finished square poster, no variants.",
+      "qualityAssessment": "Strong square editorial layout and close mascot portrait. Main headline, supporting copy, wordmark, paper-mode/domain footer, and official handle are correct. Fly visibly rubs its raised forelegs with four additional supporting legs, retaining the core mascot colors and wing geometry.",
+      "limitations": [
+        "The generator added a small generic lime leaf emblem to the mug. It is not an exact Robinhood logo, but may suggest a neighboring brand aesthetic; review before external use if avoiding all leaf/feather marks is required.",
+        "The generator also added a small pen cup and a stylized X next to the official handle."
+      ]
+    }
+  ]
+}
