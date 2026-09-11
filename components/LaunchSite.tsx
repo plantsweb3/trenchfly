@@ -186,7 +186,7 @@ function WalletRecord({ now }: { now: number }) {
 
 const QUESTIONS = [
   { q: "Is this a real fly brain?", a: "It is a computational model built from a mapped fruit-fly connectome. It is not a living fly, and a wiring map is not a complete recreation of a biological brain. The public session identifies whether the worker reports the connectome kernel or the simpler proxy decoder." },
-  { q: "Is it trading real money right now?", a: "The public launch runs in paper mode. The worker reads market data and records simulated outcomes; it does not submit real orders. The session’s mode and timestamps show what the published record contains." },
+  { q: "Is it trading real money right now?", a: "Check the session panel — the worker publishes its execution mode with every update, and this page repeats that label rather than claiming one. In paper mode, fills are simulated and no real orders are sent. In live mode, fills carry transaction references you can verify on the block explorer." },
   { q: "Can I trade through this page?", a: "This is an observation page, not a trading terminal or custody service. It does not connect to your wallet or place orders for you. The worker operates separately under its configured execution limits." },
   { q: "Does the fly learn to make money?", a: "Profitable learning has not been demonstrated. Dopamine-driven reinforcement is still in development. The experiment exposes what happened so that claims can be checked against the code and public record." },
 ];
@@ -197,6 +197,9 @@ export default function LaunchSite() {
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 15_000); return () => clearInterval(id); }, []);
   const currentTime = Math.max(now, session.checkedAt ?? 0);
   const health = feedHealth(session.data, currentTime, session.status === "unavailable");
+  const mode = session.data?.mode ?? null;
+  const kicker = mode === "live" ? "A PUBLIC LIVE EXPERIMENT" : mode === "paper" ? "A PUBLIC PAPER EXPERIMENT" : "A PUBLIC EXPERIMENT";
+  const outcomesWord = mode === "live" ? "Onchain outcomes." : mode === "paper" ? "Paper outcomes." : "Published outcomes.";
   return <div className={s.site}>
     <a href="#main" className={s.skipLink}>Skip to content</a>
     <header className={s.header}><div className={s.nav}>
@@ -207,9 +210,9 @@ export default function LaunchSite() {
     <main id="main">
       <section className={s.hero} aria-labelledby="hero-title">
         <div className={s.heroCopy}>
-          <div className={s.heroKicker}><span className={s.dot} />A PUBLIC PAPER EXPERIMENT</div>
+          <div className={s.heroKicker}><span className={s.dot} />{kicker}</div>
           <h1 id="hero-title">SMALL<br />BRAIN.<br /><span>PUBLIC<br />RECORD.</span></h1>
-          <p className={s.heroDescription}>Watch a fruit-fly connectome respond to market charts.<br className={s.desktopBreak} /> Neural proposals. Paper outcomes. An open record.</p>
+          <p className={s.heroDescription}>Watch a fruit-fly connectome respond to market charts.<br className={s.desktopBreak} /> Neural proposals. {outcomesWord} An open record.</p>
           <div className={s.heroActions}><a href="#session" className={s.primaryButton}>Watch the session<Arrow /></a><a href="#experiment" className={s.secondaryButton}>Meet the experiment<Arrow diagonal /></a></div>
         </div>
         <div className={s.heroVisual}>
@@ -227,7 +230,7 @@ export default function LaunchSite() {
           <div className={s.steps}>
             <article><div className={s.stepTop}><span>01</span><svg aria-hidden="true" viewBox="0 0 48 48" fill="none" stroke="currentColor"><path d="M5 10h38v28H5zM12 31l8-9 7 4 9-12" /><circle cx="36" cy="14" r="2" fill="currentColor" /></svg></div><h3>See a chart.</h3><p>The worker renders a market chart into a small image. The model receives a visual input, and the published feed can include the exact frame.</p><span className={s.stepFoot}>INPUT / MARKET IMAGE</span></article>
             <article><div className={s.stepTop}><span>02</span><svg aria-hidden="true" viewBox="0 0 48 48" fill="none" stroke="currentColor"><path d="m9 10 14 12L39 8M23 22l14 15M23 22 8 39M9 10l-1 29M39 8l-2 29" /><circle cx="9" cy="10" r="3" fill="currentColor" /><circle cx="23" cy="22" r="4" fill="currentColor" /><circle cx="39" cy="8" r="3" fill="currentColor" /><circle cx="8" cy="39" r="3" fill="currentColor" /><circle cx="37" cy="37" r="3" fill="currentColor" /></svg></div><h3>Make a proposal.</h3><p>The brain model produces activity. A decoder maps the response into buy, sell, or hold. The session reports the brain source and motor rates.</p><span className={s.stepFoot}>OUTPUT / NEURAL PROPOSAL</span></article>
-            <article><div className={s.stepTop}><span>03</span><svg aria-hidden="true" viewBox="0 0 48 48" fill="none" stroke="currentColor"><path d="M12 5h24v38l-6-3-6 3-6-3-6 3V5Zm6 10h12M18 22h12m-12 7h7" /></svg></div><h3>Leave a record.</h3><p>The worker checks execution limits before an order. Paper results and rejections appear in the feed; transaction references link to the chain.</p><span className={s.stepFoot}>EVIDENCE / PUBLIC OUTCOME</span></article>
+            <article><div className={s.stepTop}><span>03</span><svg aria-hidden="true" viewBox="0 0 48 48" fill="none" stroke="currentColor"><path d="M12 5h24v38l-6-3-6 3-6-3-6 3V5Zm6 10h12M18 22h12m-12 7h7" /></svg></div><h3>Leave a record.</h3><p>The worker checks execution limits before an order. Outcomes and rejections appear in the feed; transaction references link to the chain.</p><span className={s.stepFoot}>EVIDENCE / PUBLIC OUTCOME</span></article>
           </div>
           <div className={s.guardBand}><div><span className={s.eyebrow}>THE FLY HAS LIMITS</span><h3>Curiosity, with a leash.</h3></div><p>The worker defines order, inventory, slippage, timing, and drawdown limits. These controls are code you can inspect; they do not guarantee safety or returns.</p><External href={`${REPO}/blob/main/worker/config.ts`} className={s.darkLink}>Read the limits</External></div>
         </section>

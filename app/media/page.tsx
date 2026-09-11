@@ -4,7 +4,7 @@ import CopyMediaText from "@/components/CopyMediaText";
 import { SITE_URL, SOCIAL_URL, SOCIAL_HANDLE } from "@/lib/site";
 import s from "./media.module.css";
 
-const description = "RobinFly is an open-source experiment that presents market charts to a simulated fruit-fly connectome and publishes its neural proposals and paper outcomes on Robinhood Chain.";
+const description = "RobinFly is an open-source experiment that presents market charts to a simulated fruit-fly connectome and publishes its neural proposals and recorded outcomes on Robinhood Chain.";
 const title = "RobinFly — Media kit";
 export const metadata: Metadata = {
   title,
@@ -47,7 +47,7 @@ export default function MediaPage() {
       </figure>
       <section className={s.about} aria-labelledby="about-title">
         <div><p className={s.kicker}>THE SHORT VERSION</p><h2 id="about-title">A strange idea.<br />An open record.</h2></div>
-        <div className={s.boilerplate}><p>{description}</p><CopyMediaText text={description} /><p className={s.note}>The public launch is a paper experiment. Chart understanding and profitable learning have not been demonstrated. RobinFly is independent and is not affiliated with Robinhood.</p></div>
+        <div className={s.boilerplate}><p>{description}</p><CopyMediaText text={description} /><p className={s.note}>The worker publishes its execution mode with every feed update; outcomes are only as real as the receipts in the record. Chart understanding and profitable learning have not been demonstrated. RobinFly is independent and is not affiliated with Robinhood.</p></div>
       </section>
       <section className={s.editorial} aria-label="Campaign and motion assets">
         <figure><Image src="/media/art/robinfly-let-the-fly-cook-square.png" width={1254} height={1254} alt="Faceted RobinFly rubbing his forelegs. Let the fly cook. Watch the experiment. Paper mode." sizes="(max-width: 800px) 100vw, 620px" /><figcaption><span>Character campaign / Let the fly cook.</span><a href="/media/art/robinfly-let-the-fly-cook-square.png" download>PNG ↓</a></figcaption></figure>

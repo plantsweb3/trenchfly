@@ -8,7 +8,7 @@ const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", weight: ["400", "
 const plexSans = IBM_Plex_Sans({ variable: "--font-plex-sans", weight: ["400", "500", "600"], subsets: ["latin"] });
 
 const title = `${SITE_NAME} — Small brain. Public record.`;
-const description = "Watch a simulated fruit-fly connectome respond to market charts. RobinFly publishes neural proposals, exact inputs and paper outcomes on Robinhood Chain.";
+const description = "Watch a simulated fruit-fly connectome respond to market charts. RobinFly publishes neural proposals, exact inputs and recorded outcomes on Robinhood Chain.";
 
 export const metadata: Metadata = {
   metadataBase: SITE_URL ? new URL(SITE_URL) : undefined,
