@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-09-11T00:56:29.566706+00:00",
+  "chainId": 4663,
+  "verification": "One-time read-only transaction receipt check; not a performance assessment",
+  "transactions": [
+    {
+      "transactionHash": "0x814d5af1dd41bff54beca22d32714fa6b8fe964849b4dd9eb9b0b8635af299e6",
+      "blockHash": "0xe8b649393e053ad30ec36732f5d30ec1d8bafdfa18b9d139d48c3d575673de43",
+      "blockNumber": "0x3912376",
+      "status": "0x1",
+      "from": "0xcfda372624aabee4873b86dc940605773d31ad75",
+      "to": "0xcaf681a66d020601342297493863e78c959e5cb2",
+      "gasUsed": "0x228af",
+      "effectiveGasPrice": "0x78f93d0"
+    },
+    {
+      "transactionHash": "0x357b188bbc62444acb9c065e1f240cfe9d985b91efa0042173c917e231a70265",
+      "blockHash": "0x1a16d31db638c595c27e5736e0ae7286438c28e3d014a7db19a344e3dc9f6b31",
+      "blockNumber": "0x39126b5",
+      "status": "0x1",
+      "from": "0xcfda372624aabee4873b86dc940605773d31ad75",
+      "to": "0xcaf681a66d020601342297493863e78c959e5cb2",
+      "gasUsed": "0x1e571",
+      "effectiveGasPrice": "0x7a824e0"
+    }
+  ]
+}

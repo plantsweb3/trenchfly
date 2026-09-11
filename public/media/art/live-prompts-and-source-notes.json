@@ -1,0 +1,35 @@
+{
+  "version": "live-status-update",
+  "mode": "built-in image_gen edit mode",
+  "method": "The two existing posters were visually inspected, then edited individually using the built-in image_gen tool with each poster as its local image target. No CLI fallback or raster post-processing was used. Superseded paper posters were archived separately from this launch kit.",
+  "statusBasis": "User correction, published live feed and two successful Robinhood Chain transaction receipts checked on 2026-09-11 UTC; see evidence/LIVE-RECORD.md.",
+  "intendedUse": "Illustrative marketing graphics, without newly asserted financial results or gains.",
+  "officialDomain": "robinfly.net",
+  "officialXHandle": "@RobinFlyPons",
+  "assets": [
+    {
+      "file": "robinfly-small-brain-public-record-landscape-live.png",
+      "sourceAsset": "Superseded paper campaign poster, archived separately",
+      "width": 1672,
+      "height": 941,
+      "edits": [
+        "Changed \"PAPER EXPERIMENT\" to \"LIVE EXPERIMENT\".",
+        "Changed the monitor label \"PAPER\" to \"ROBINFLY\"."
+      ],
+      "prompt": "Use case: text-localization.\nAsset type: precise text-only edit of the supplied finished RobinFly landscape campaign poster.\nInput image: supplied poster is the edit target.\nChange only these two existing text labels:\n1. Replace the left-side spaced small badge text \"PAPER EXPERIMENT\" with \"LIVE EXPERIMENT\". Match the same typography, size, weight, color, tracking and baseline.\n2. Replace the monitor's small \"PAPER\" label with \"ROBINFLY\", matching its perspective, acid-lime color, compact lettering, and position.\nPreserve absolutely everything else: original dimensions 1672\u00d7941, composition, camera, scene objects, decorative monitor line art, lighting, palette, low-poly mascot identity and geometry, six legs, wings and coral eyes, texture and all other typography. Keep \"ROBINFLY.\", \"SMALL BRAIN.\", \"PUBLIC RECORD.\", \"BUY\", \"SELL\", \"robinfly.net\" and \"@RobinFlyPons\" exactly as they are, with original positioning. Do not redraw or redesign. Do not crop, resize, add or remove objects. This is an illustrative marketing graphic and the live label is a user-confirmed status update. Do not add numbers, profits, financial results, gains, live fill information or any new claims. Deliver only the edited poster.",
+      "qualityCheck": "Visually inspected. Both replacements are correctly spelled and readable. Original dimensions, main headlines, domain, official handle, mascot, scene composition and lighting are visually preserved."
+    },
+    {
+      "file": "robinfly-let-the-fly-cook-square-live.png",
+      "sourceAsset": "Superseded paper campaign poster, archived separately",
+      "width": 1254,
+      "height": 1254,
+      "edits": [
+        "Changed footer \"PAPER MODE\" to \"LIVE SESSION\"."
+      ],
+      "prompt": "Use case: text-localization.\nAsset type: precise text-only edit of the supplied finished RobinFly square campaign poster.\nInput image: supplied poster is the edit target.\nChange only the two words \"PAPER MODE\" in the small bottom footer to the exact text \"LIVE SESSION\". The complete footer must read \"LIVE SESSION \u00b7 robinfly.net\". Match the same typography, size, color, tracking and baseline; keep the domain and overall footer centered elegantly in the same footer area.\nPreserve absolutely everything else: original dimensions 1254\u00d71254, full composition, camera, lighting, palette, scene objects, desk, mug, low-poly mascot identity and geometry, six legs, wings and coral eyes, all texture and all other typography. Keep \"ROBINFLY.\", \"LET THE FLY COOK.\", \"Watch the experiment.\", \"BUY\", \"robinfly.net\" and \"@RobinFlyPons\" exactly as they are. Do not redraw or redesign. Do not crop, resize, add or remove objects. This is an illustrative marketing graphic and the live wording is a user-confirmed status update. Do not add numbers, profits, financial results, gains, live fill information or any new claims. Deliver only the edited poster.",
+      "qualityCheck": "Visually inspected. The footer reads LIVE SESSION \u00b7 robinfly.net, and @RobinFlyPons remains correct. Original dimensions, headlines, mascot, props, composition and lighting are visually preserved."
+    }
+  ],
+  "originalArtMethod": "Built-in image generation from the existing native RobinFly mascot and desk references. The original generation prompts are archived with the superseded paper artwork."
+}

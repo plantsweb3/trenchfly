@@ -27,12 +27,13 @@ Curious, dry, direct. Use concrete verbs and evidence. A little personality belo
 
 Examples: “The fly is clocked in.” “Chart in. Spikes out.” “A rejected proposal belongs in the record too.”
 
-The launch is a **paper experiment**. A fresh feed is not proof of real-money execution. Avoid claims of profitable learning, human-like comprehension, a living fly, a world first, guaranteed returns or affiliation with Robinhood. Do not market the public wallet as a token contract.
+The launch kit reflects **live execution**, verified from two successful Robinhood Chain receipts on 11 September 2026 UTC. The brain remains a computational simulation. Campaign badges describe the launch; the session reports current mode and freshness. A successful transaction is not proof of profitability. Avoid claims of profitable learning, human-like comprehension, a living fly, a world first, guaranteed returns or affiliation with Robinhood. Do not market the public wallet as a token contract.
 
 ## What each asset represents
 
 - `art/`: AI-generated campaign illustrations, using the original mascot and desk as references. Screen art is decorative. These are not product screenshots or data evidence.
 - `social/`: original editable vector compositions using the native Blender mascot and workstation. PNG exports are ready for upload.
+- `social/live-receipts.png`: the recorded CASHCAT buy/sell cycle, with successful receipts checked on 11 September 2026 UTC. The public transaction references and receipt snapshot are in `evidence/`.
 - `social/recorded-observation.png`: a historical paper observation with a UTC timestamp, actual input image, measured motor samples and outcome. Its JSON and exact source image are in `evidence/`.
 - `social/decision-template.*`: an explicitly unfinished template. Replace every bracketed field with verified information before publishing.
 - `motion/`: a six-second silent native Blender grooming loop. It depicts decorative character motion, not a trade or live telemetry.
@@ -42,4 +43,4 @@ The generated square poster includes a small generic leaf motif on the mug; it i
 
 ## Usage
 
-The project owner may use and adapt this launch kit. Others may use these supplied assets to cover or share RobinFly, preserving the brand, mode labels and context, and linking to robinfly.net or @RobinFlyPons. This permission does not cover third-party trademarks or imply endorsement by Robinhood. Keep AI campaign art separate from claims of measured evidence. Generated-image prompts and source notes are included in `art/`.
+The project owner may use and adapt this launch kit. Others may use these supplied assets to cover or share RobinFly, preserving the brand, mode labels and context, and linking to robinfly.net or @RobinFlyPons. This permission does not cover third-party trademarks or imply endorsement by Robinhood. Campaign artwork illustrates the character; use receipt and observation cards for measured evidence. Generated-image prompts and source notes are included in `art/`.

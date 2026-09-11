@@ -1,5 +1,7 @@
 # RobinFly — launch copy
 
+Updated for live execution · 11 September 2026 UTC. Successful transaction receipts are linked in `evidence/LIVE-RECORD.md`. The historical paper card remains in the archive.
+
 Official account: **@RobinFlyPons** · Website: https://robinfly.net
 
 Drafts only. Nothing in this file has been posted or scheduled. Each post is under 280 characters as written. Use the pinned thread or standalone launch post as the opening announcement, rather than posting both together.
@@ -10,7 +12,7 @@ Display name: **RobinFly**
 
 Bio:
 
-A fruit-fly connectome meets the market. Watch neural proposals and paper outcomes in public. Small brain. Public record. ↓
+A fruit-fly connectome meets the market. Watch neural proposals and onchain outcomes in public. Small brain. Public record. ↓
 
 Website field: https://robinfly.net
 
@@ -22,13 +24,13 @@ Header: `social/x-header.png`
 
 The fly is clocked in.
 
-RobinFly puts market charts in front of a simulated fruit-fly connectome and publishes its neural proposals and paper outcomes.
+RobinFly puts market charts in front of a simulated fruit-fly connectome and publishes its neural proposals and onchain outcomes.
 
 Small brain. Public record.
 
 Watch the experiment: https://robinfly.net/#session
 
-Attach: `art/robinfly-small-brain-public-record-landscape.png`
+Attach: `art/robinfly-small-brain-public-record-landscape-live.png`
 
 ## Pinned launch thread
 
@@ -38,7 +40,7 @@ Attach: `art/robinfly-small-brain-public-record-landscape.png`
 
 Meet RobinFly: a simulated fruit-fly connectome responding to market charts on Robinhood Chain.
 
-The public launch is in paper mode.
+Live execution. Onchain receipts.
 https://robinfly.net/#session
 
 ### Post 2
@@ -65,7 +67,7 @@ Software picks the input; the neural response feeds the proposal.
 
 5/6 Public means the awkward parts too.
 
-Holds, rejected proposals and paper fills share the same record. Profitable learning and reliable chart understanding have not been demonstrated.
+Holds, rejected proposals and transaction receipts share the same record. Profitable learning and reliable chart understanding have not been demonstrated.
 
 Inspect the experiment instead of taking our word for it.
 
@@ -87,7 +89,7 @@ Attach the landscape campaign poster to post 1, `social/how-it-works.png` to pos
 
 A desk. Two buttons. Six legs.
 
-The fly has clocked in. Watch the paper experiment at https://robinfly.net/#session
+The fly has clocked in. Watch the live experiment at https://robinfly.net/#session
 
 Attach: `motion/robinfly-desk-loop.mp4`
 
@@ -95,7 +97,7 @@ Attach: `motion/robinfly-desk-loop.mp4`
 
 Chart in. Spikes out.
 
-A market image becomes input to a simulated connectome. Its motor response feeds a BUY, SELL or HOLD proposal. The paper outcome goes into the public record.
+A market image becomes input to a simulated connectome. Its motor response feeds a BUY, SELL or HOLD proposal. The execution result goes into the public record.
 
 https://robinfly.net/#experiment
 
@@ -107,9 +109,9 @@ Let the fly cook.
 
 Watch the experiment: https://robinfly.net/#session
 
-Paper mode. Public record.
+Live experiment. Public record.
 
-Attach: `art/robinfly-let-the-fly-cook-square.png`
+Attach: `art/robinfly-let-the-fly-cook-square-live.png`
 
 ### Input evidence
 
@@ -121,15 +123,15 @@ https://robinfly.net/#session
 
 Attach: `social/launch-landscape.png`
 
-### Honest outcomes
+### Onchain receipts
 
-A rejected proposal belongs in the record too.
+The fly has an onchain record.
 
-This timestamped paper observation includes the chart, the measured motor samples and the guard result.
+The recorded CASHCAT buy and sell both have successful receipts on Robinhood Chain. Inspect the transaction links and source data in the media kit.
 
-Inspect the session: https://robinfly.net/#session
+https://robinfly.net/media
 
-Attach: `social/recorded-observation.png`
+Attach: `social/live-receipts.png`
 
 ### Research
 
@@ -145,7 +147,7 @@ Attach: `social/how-it-works.png`
 
 Curious what sits behind the fly?
 
-The implementation and published evidence are open to inspect. The experiment is in paper mode, and its limits are part of the story.
+The implementation and published evidence are open to inspect. Live execution now has an onchain record. The limits remain part of the story.
 
 https://github.com/plantsweb3/trenchfly
 
@@ -167,7 +169,7 @@ Attach: `social/launch-portrait.png`
 
 ### Is this trading real funds?
 
-The public launch is a paper experiment. It reads market data and records simulated outcomes. The session labels its mode and timestamps.
+Yes. Live execution has successful onchain receipts. The brain is simulated; the transactions are real. Check the session mode, timestamps and linked receipts.
 
 ### Is this a living fly?
 

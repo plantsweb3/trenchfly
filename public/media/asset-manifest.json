@@ -2,7 +2,7 @@
   "brand": "RobinFly",
   "handle": "@RobinFlyPons",
   "website": "https://robinfly.net",
-  "createdAt": "2026-09-11T00:18:48.633Z",
+  "createdAt": "2026-09-11T00:58:24.760Z",
   "source": "Existing native Blender mascot and workstation, original editable vector layouts; generated campaign art credited separately.",
   "assets": [
     {
@@ -11,7 +11,7 @@
       "width": 1500,
       "height": 500,
       "title": "RobinFly X header \u2014 Small brain. Public record.",
-      "bytes": 151071
+      "bytes": 150836
     },
     {
       "file": "identity/avatar.png",
@@ -27,7 +27,7 @@
       "width": 1600,
       "height": 900,
       "title": "The fly is clocked in \u2014 RobinFly launch card",
-      "bytes": 448362
+      "bytes": 448078
     },
     {
       "file": "social/launch-portrait.png",
@@ -35,7 +35,7 @@
       "width": 1080,
       "height": 1350,
       "title": "RobinFly portrait launch poster",
-      "bytes": 473359
+      "bytes": 473135
     },
     {
       "file": "social/character-square.png",
@@ -43,7 +43,7 @@
       "width": 1080,
       "height": 1080,
       "title": "Let the fly cook \u2014 RobinFly character card",
-      "bytes": 236725
+      "bytes": 236906
     },
     {
       "file": "social/how-it-works.png",
@@ -51,7 +51,7 @@
       "width": 1600,
       "height": 900,
       "title": "RobinFly explained: market image, neural response, public outcome",
-      "bytes": 98157
+      "bytes": 97570
     },
     {
       "file": "social/story.png",
@@ -59,7 +59,7 @@
       "width": 1080,
       "height": 1920,
       "title": "RobinFly vertical launch story",
-      "bytes": 568898
+      "bytes": 568687
     },
     {
       "file": "social/decision-template.png",
@@ -67,7 +67,7 @@
       "width": 1600,
       "height": 900,
       "title": "Editable decision card \u2014 not a result",
-      "bytes": 76009
+      "bytes": 74942
     },
     {
       "file": "social/recorded-observation.png",
@@ -76,16 +76,27 @@
       "height": 900,
       "title": "Timestamped RobinFly paper observation with measured neural samples",
       "bytes": 114480
-    }
-  ],
-  "campaignArt": [
-    {
-      "file": "art/robinfly-small-brain-public-record-landscape.png",
-      "source": "Built-in imagegen; prompts included"
     },
     {
-      "file": "art/robinfly-let-the-fly-cook-square.png",
-      "source": "Built-in imagegen; prompts included"
+      "file": "social/live-receipts.png",
+      "editable": "social/live-receipts.svg",
+      "width": 1600,
+      "height": 900,
+      "title": "RobinFly recorded live cycle \u2014 two successful transaction receipts",
+      "bytes": 110094
+    }
+  ],
+  "updatedAt": "2026-09-11T01:01:50.337486+00:00",
+  "revision": "live-launch",
+  "executionContext": "Live execution demonstrated by dated successful transaction receipts. The neural model is simulated. Historical paper evidence retains its original mode.",
+  "campaignArt": [
+    {
+      "file": "art/robinfly-small-brain-public-record-landscape-live.png",
+      "source": "Built-in imagegen edit; prompts included in art/live-prompts-and-source-notes.json"
+    },
+    {
+      "file": "art/robinfly-let-the-fly-cook-square-live.png",
+      "source": "Built-in imagegen edit; prompts included in art/live-prompts-and-source-notes.json"
     }
   ],
   "motion": {
@@ -108,53 +119,63 @@
   "files": [
     {
       "file": "BRAND-GUIDE.md",
-      "bytes": 3133,
-      "sha256": "e0f41dadd05de2ecd40bb9661f59bb4d49ddb41bf528a0484eea52d9e5bd6199"
+      "bytes": 3593,
+      "sha256": "0b3bb1eba1d9a7f1cdb72f4a147802f31fdf2f6629e928911c1d80ad186dc6da"
     },
     {
       "file": "LAUNCH-PLAN.md",
-      "bytes": 2031,
-      "sha256": "a17d9a08b7d4546fc0ef4b464f386d3f50cbb954f3fa3aa79e419fd51428a45e"
+      "bytes": 2056,
+      "sha256": "492110b020b8c216c514f208c7de7a4a9475a72ce7de13ef9a207df918820b3d"
     },
     {
       "file": "START-HERE.md",
-      "bytes": 1162,
-      "sha256": "1a448b8f4cb645b8c31cf6d7c3592cc98ed76fe8b5a0d481b8a1b06af4827c6a"
+      "bytes": 1188,
+      "sha256": "fcd18878b055f920ddf3905df87d1d5aaeaf12f8219e237cd4c9a8489c09ac10"
     },
     {
-      "file": "art/prompts-and-source-notes.json",
-      "bytes": 8334,
-      "sha256": "4a131f5e41936d082e171e903f94553dfff5c79fb1f74d3c879c69599582f683"
+      "file": "art/live-prompts-and-source-notes.json",
+      "bytes": 4486,
+      "sha256": "61908999f43a0f856f736965989a4b3399f2e0bebb4aa35640a92150570b3e19"
     },
     {
-      "file": "art/robinfly-let-the-fly-cook-square.png",
-      "bytes": 1561667,
-      "sha256": "960fe4933a9ea1402ae4542fa94c35fee864b5ee870aac3ecfb368854e4ea6e2"
+      "file": "art/robinfly-let-the-fly-cook-square-live.png",
+      "bytes": 1527129,
+      "sha256": "3033e3468ae48359a9cb993434fa10f7a097a90bb60bbb0d69d03ca38f200e6e"
     },
     {
-      "file": "art/robinfly-small-brain-public-record-landscape.png",
-      "bytes": 1800630,
-      "sha256": "823a1e45bdcc47ffbe93cfe885558b36397cc1aaaab4a1b5e7b5f9710220bd61"
+      "file": "art/robinfly-small-brain-public-record-landscape-live.png",
+      "bytes": 1671187,
+      "sha256": "325a759f843105ee75b7ba2c9680a667cedca73fc6a2f1cc4147bf6e56a1b619"
     },
     {
       "file": "copy/PRESS-COPY.md",
-      "bytes": 1505,
-      "sha256": "485da6655368912613626a8ed52fac32b6ef460bb3a9a16124268b51bfaefd86"
+      "bytes": 1854,
+      "sha256": "4b4ff348b5c7d80038c375cc284684af03a16787bf597fe9307e7891ec8844ff"
     },
     {
       "file": "copy/X-POSTS.md",
-      "bytes": 5504,
-      "sha256": "ad9eb937c5d938c7dd95c5ec4d6e5b1052ee6433ebfa8229afca9a19b67e97ac"
+      "bytes": 5737,
+      "sha256": "a29811fd196c3ec311fda06a08c5e344a314b18679edbd8cc7d3c6f3f58e7e46"
     },
     {
       "file": "copy/posts.json",
-      "bytes": 5813,
-      "sha256": "b0855f8e9e5f2f831aed4401980427431d8742117f3b06a8375274f538656a90"
+      "bytes": 5865,
+      "sha256": "3bf9b5174bbe466491e88dfd848f1142c84372964dbe1b4575d71f6c5129fc12"
     },
     {
       "file": "evidence/5cb04fd0522f65401d4c6ba658741c98fa6ee330f33ae674d4299ca67c4771f2.png",
       "bytes": 3912,
       "sha256": "5cb04fd0522f65401d4c6ba658741c98fa6ee330f33ae674d4299ca67c4771f2"
+    },
+    {
+      "file": "evidence/LIVE-RECORD.md",
+      "bytes": 1695,
+      "sha256": "5d03a75d20b9046a05b23c07f8e1efe77bdd8caaca7cf8d9c353304929da27f8"
+    },
+    {
+      "file": "evidence/live-cycle-receipts.json",
+      "bytes": 1071,
+      "sha256": "a0d766a9a3c482ee3facbad20ae2d4c7f297131371d58e599406f650f0212868"
     },
     {
       "file": "evidence/recorded-observation.json",
@@ -208,8 +229,8 @@
     },
     {
       "file": "kit-preview.png",
-      "bytes": 406200,
-      "sha256": "fad6f0635ec302c1a17d2efa488ab0b2de26fa5f92e48f398f483c889fad7cef"
+      "bytes": 434162,
+      "sha256": "e5f313c1a8d263e3ea9236481793cff49a0995876e333f6e114759e05635fb31"
     },
     {
       "file": "motion/motion-notes.json",
@@ -218,68 +239,78 @@
     },
     {
       "file": "motion/robinfly-desk-loop-poster.png",
-      "bytes": 205131,
-      "sha256": "fe58fb8e0870e721f643ca62c67c4f51a3d6568a44920a4689da730a0fd53fa1"
+      "bytes": 205789,
+      "sha256": "7507567a2f21e316566a513f818feae2150e6f7a04cec6223fe5035617e55e61"
     },
     {
       "file": "motion/robinfly-desk-loop.gif",
-      "bytes": 301872,
-      "sha256": "450f56013c3234d1f3efc609d9f641f8c3c444da8fc108f41fbce2ead7cee17a"
+      "bytes": 296046,
+      "sha256": "0da93bae7c98cf4eaa548b4f263be7a7f9197bb5ce35ad5a235bd5baea8c4cfc"
     },
     {
       "file": "motion/robinfly-desk-loop.mp4",
-      "bytes": 160176,
-      "sha256": "853b3dfbea00408ef532ce5e8b07b7f0908f08d3921406f7e9c56f7828917dc9"
+      "bytes": 160369,
+      "sha256": "7a24ab0b47c34a39d89c8d13e0e633f14378e3a6106ede6ce7705e327649ded8"
     },
     {
       "file": "social/character-square.png",
-      "bytes": 236725,
-      "sha256": "328e796c57fed91116b0603eeb42e3d16d22a3f62e6f2df0849a180df9c5b2a5"
+      "bytes": 236906,
+      "sha256": "a6243788be78f241211be039062d7a18bc413d266ad61206fbd805d8af479e36"
     },
     {
       "file": "social/character-square.svg",
-      "bytes": 1228595,
-      "sha256": "d87514419b02e7300fb6eb606cd88d9d57b2d71b4034f2623f05f7ed1b09bdb2"
+      "bytes": 1228597,
+      "sha256": "f0b9d3c9199c52a65cac34b9560a1f51b63f5ffeb5071839b0ac9831970e1fc0"
     },
     {
       "file": "social/decision-template.png",
-      "bytes": 76009,
-      "sha256": "624d3d57eea80d564b373e3201a9ee3b0bf63e11330bdf8d1cb53ef27e22a4cc"
+      "bytes": 74942,
+      "sha256": "3bdb2d95782ff3b1389b487926ce3c47faa7606ac7124c80777eeb9247b3a088"
     },
     {
       "file": "social/decision-template.svg",
-      "bytes": 2508,
-      "sha256": "238480a634ccd991c53a4ad445228763ccddaa82bacd9a4ca43d2436b1cb3c52"
+      "bytes": 2502,
+      "sha256": "71133f99131cfd9d32d4d25e1c5ac509a3d2bcce243693a74bf0c2963849ffae"
     },
     {
       "file": "social/how-it-works.png",
-      "bytes": 98157,
-      "sha256": "6f00d81ba3eac71fa930055987f967682d0eca531c9cb23760d798711048cedb"
+      "bytes": 97570,
+      "sha256": "d6d5aca2c9d33a8229a61c58518f2aab8169387bdf31d35f82970e78b9f02a07"
     },
     {
       "file": "social/how-it-works.svg",
-      "bytes": 3886,
-      "sha256": "4bb44427e4ca1d097f3ca1222e2b3e929c1ec929c02713f1bb2c9c684e0e4517"
+      "bytes": 3882,
+      "sha256": "b3f53c0dcce4b71cc8d3a10cb977c2d238cfdcfd633d5a2505727a73dbd829d0"
     },
     {
       "file": "social/launch-landscape.png",
-      "bytes": 448362,
-      "sha256": "e1ec8e1d2cc81911e0a021026b8961293088f42726970a8c4bbffdd70b1b7c24"
+      "bytes": 448078,
+      "sha256": "441d50cd462dc996966386169c8f4aa6b09513b6c5535da7811755c1880984b0"
     },
     {
       "file": "social/launch-landscape.svg",
-      "bytes": 1423318,
-      "sha256": "955d6f2b75eeed8df7c1838ac61052a00c1084fdedda7215bd30fac2b130a9a1"
+      "bytes": 1423317,
+      "sha256": "f82c68dd6ddb4230fe732fadffa7c2c07d802e0c0619c83ea88d2c4efd5996f6"
     },
     {
       "file": "social/launch-portrait.png",
-      "bytes": 473359,
-      "sha256": "03a347b1d1c83fa89dac5d46f268b4b31f408bc4659d7381e8bcba4f194f8c65"
+      "bytes": 473135,
+      "sha256": "c79871fbc55c97fafca8830aef4ec69ec11989719df96c4b4d919d7b98d629c9"
     },
     {
       "file": "social/launch-portrait.svg",
-      "bytes": 1423016,
-      "sha256": "c9c0738372a414bced0236c5c381a39b56c37a80d120313bb0275597c33bfc11"
+      "bytes": 1423015,
+      "sha256": "c896eb5d037e4429d4a4cd5e2f336e40c34423bfbd05da9c6b1959a3eee30621"
+    },
+    {
+      "file": "social/live-receipts.png",
+      "bytes": 110094,
+      "sha256": "9be452a590cb8bdb561d205d07f54b7f92492c1d874fba96d0c5fc8d480a2049"
+    },
+    {
+      "file": "social/live-receipts.svg",
+      "bytes": 3340,
+      "sha256": "7ad9add4ec7055c3f3320a3ab08dac91b25edccb5782e91c7e717a68b8d4e758"
     },
     {
       "file": "social/recorded-observation.png",
@@ -293,23 +324,23 @@
     },
     {
       "file": "social/story.png",
-      "bytes": 568898,
-      "sha256": "489c9905284c1e2b564e2fe7d2830b2ff4fb78e80eaa2945aae4f6c76c583abe"
+      "bytes": 568687,
+      "sha256": "e7462373ea3cb29f8660542256166b89666bdd1be2c8f11c9e28244596145bc6"
     },
     {
       "file": "social/story.svg",
-      "bytes": 1423091,
-      "sha256": "db783adbda2e351564222b31ab3d0123c31d79bcd9d2ec2b679006af0bc3db8c"
+      "bytes": 1423090,
+      "sha256": "5d83d55c02ce89e9b434acbf41903d3a5d791392dbe37a43ece6925982719a78"
     },
     {
       "file": "social/x-header.png",
-      "bytes": 151071,
-      "sha256": "db905d7bc27d185b8b814c17532d2809fc406a271d77faabf85cdff17da262c3"
+      "bytes": 150836,
+      "sha256": "d548f507bcadf4a623a3cf828e85c88247e7fa8284dd59b37d230bd102545124"
     },
     {
       "file": "social/x-header.svg",
-      "bytes": 1228413,
-      "sha256": "a6c6e10a58119bcdfa71106e9c651fab021d3a102d5c03a11da8dce990b60973"
+      "bytes": 1228412,
+      "sha256": "bc684c67740ca6b56bc78107333b2efded0598a9f7ff3357bc41523d8981150a"
     }
   ]
 }
