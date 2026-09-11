@@ -31,11 +31,23 @@ A process lock prevents two workers from sharing the books. Paper and live books
 
 The global 60-second order cooldown survives restart. Pending execution blocks further attempts. Unknown or stale inventory valuation blocks new buys. The feed includes mode, run ID, worker status, heartbeat, per-market quote coverage and the referenced input frames; it retains every frame referenced by the current decision window. Publishing never force-pushes history.
 
+## First live cycle demonstrated (2026-09-11)
+
+A complete owner-activated live cycle ran on mainnet 4663 and reconciled
+with no pending intents: BUY CASHCAT 0.0025 ETH
+(0x814d5af1dd41bff54beca22d32714fa6b8fe964849b4dd9eb9b0b8635af299e6,
+block 59843446), approval, SELL
+(0x357b188bbc62444acb9c065e1f240cfe9d985b91efa0042173c917e231a70265,
+block 59844277), WETH unwrap — all receipts success; round-trip cost
+including gas ≈ 0.00009 ETH. One demonstrated cycle on one liquid pair
+is not blanket route coverage, recovery-path proof, or a performance
+claim.
+
 ## Live readiness still required
 
 The implementation includes chain-ID checks, actual-order quotes, swap simulation, minimum output checks, exact approvals, receipt-based token settlement, gas accounting, and partial-unwrap handling. A durable pending intent is saved before execution. Any unresolved execution pauses for reconciliation; it is not automatically retried.
 
-No launch check has established a complete live buy → sell → gas/recovery cycle. Review and test that path independently before any owner-operated activation. A private production RPC, a durable always-on host, complete route coverage and operational recovery remain launch requirements. The website host is not the brain-worker host.
+One complete buy → sell → gas cycle has been demonstrated (above); failure-path recovery has only offline injected-I/O coverage. A private production RPC, a durable always-on host, complete route coverage and operational recovery remain launch requirements. The website host is not the brain-worker host.
 
 The limits in `config.ts` are experimental controls, not guarantees. Dopamine learning and profitable behavior are not demonstrated.
 
